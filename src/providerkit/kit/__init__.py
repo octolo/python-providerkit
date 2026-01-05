@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from types import ModuleType
+from typing import Any
 
 from .config import ConfigMixin
 from .cost import CostMixin
@@ -57,4 +58,64 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
 
         for field, value in kwargs.items():
             setattr(self, field, value)
+
+    def _get_nested_value(self, data: dict[str, Any], path: str | list[str] | tuple[str, ...], default: Any = None) -> Any:
+        if isinstance(path, (list, tuple)):
+            for p in path:
+                value = self._get_nested_value(data, p, None)
+                if value is not None:
+                    return value
+            return default
+
+        if not path:
+            return default
+        keys = path.split(".")
+        val: Any = data
+        for k in keys:
+            if isinstance(val, dict):
+                val = val.get(k)
+            elif isinstance(val, list):
+                try:
+                    index = int(k)
+                    if 0 <= index < len(val):
+                        val = val[index]
+                    else:
+                        return default
+                except (ValueError, TypeError):
+                    return default
+            else:
+                return default
+            if val is None:
+                return default
+        return val
+
+    def _normalize_recursive(self, data: dict[str, Any], field: str, source: str | list[str] | tuple[str, ...] | None) -> Any:
+        if source is None:
+            return None
+        if isinstance(source, (tuple, list)):
+            for path in source:
+                value = self._normalize_recursive(data, field, path)
+                if value is not None:
+                    return value
+            return None
+        if isinstance(source, str):
+            if "." in source:
+                return self._get_nested_value(data, source)
+            return data.get(source)
+        return source
+
+    def normalize(self, fields: list[str], data: dict[str, Any], fields_associations: dict[str, str | list[str] | tuple[str, ...] | None] | None = None) -> dict[str, Any]:
+        if fields_associations is None:
+            fields_associations = getattr(self, "fields_associations", {})
+        normalized: dict[str, Any] = {}
+        for field in fields:
+            normalize_method = getattr(self, f"get_normalize_{field}", None)
+            if normalize_method and callable(normalize_method):
+                value = normalize_method(data)
+            else:
+                source = fields_associations.get(field)
+                value = self._normalize_recursive(data, field, source)
+            if value is not None:
+                normalized[field] = value
+        return normalized
 
