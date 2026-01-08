@@ -58,7 +58,7 @@ The `kit/` directory contains the core provider infrastructure:
 
 The public API is defined in `src/providerkit/__init__.py`:
 - `ProviderBase`: Main base class for all providers
-- Mixins: `ConfigMixin`, `PackageMixin`, `UrlsMixin`
+- Mixins: `ConfigMixin`, `CostMixin`, `PackageMixin`, `UrlsMixin`
 - Helper functions: `get_providers()`, `autodiscover_providers()`, `load_providers_from_json()`, etc.
 - CLI: `main()` function for command-line interface
 

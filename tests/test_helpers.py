@@ -169,8 +169,9 @@ def test_get_providers_with_lib_name() -> None:
     providers = get_providers(lib_name="alphabet")
 
     assert len(providers) == 6
-    assert "china_alphabet" in providers
-    assert "japan_alphabet" in providers
+    provider_names = [p.name for p in providers]
+    assert "china_alphabet" in provider_names
+    assert "japan_alphabet" in provider_names
 
 
 def test_get_providers_with_json_path() -> None:
@@ -208,8 +209,9 @@ def test_get_providers_with_config() -> None:
     providers = get_providers(config=config)
 
     assert len(providers) == 2
-    assert "spain_alphabet" in providers
-    assert "swahili_alphabet" in providers
+    provider_names = [p.name for p in providers]
+    assert "spain_alphabet" in provider_names
+    assert "swahili_alphabet" in provider_names
 
 
 def test_get_providers_with_dir_path() -> None:
@@ -220,8 +222,9 @@ def test_get_providers_with_dir_path() -> None:
     )
 
     assert len(providers) == 6
+    provider_names = [p.name for p in providers]
     for provider_name in ["china_alphabet", "japan_alphabet", "france_alphabet", "spain_alphabet", "arabic_alphabet", "swahili_alphabet"]:
-        assert provider_name in providers
+        assert provider_name in provider_names
 
 
 def test_load_providers_from_json_empty_when_file_not_found() -> None:

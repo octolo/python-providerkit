@@ -3,53 +3,53 @@
 from __future__ import annotations
 
 import sys
-from types import ModuleType
 from typing import Any
 
 from .config import ConfigMixin
 from .cost import CostMixin
 from .package import PackageMixin
+from .response import ResponseMixin
 from .service import ServiceMixin
 from .urls import UrlsMixin
 
+FIELDS_PROVIDER_BASE = {
+    'name': {'label': 'Name', 'description': 'Provider name', 'format': 'str'},
+    'display_name': {
+        'label': 'Display Name',
+        'description': 'Provider display name',
+        'format': 'str',
+    },
+    'description': {'label': 'Description', 'description': 'Provider description', 'format': 'str'},
+}
 
-class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin):
+
+class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin, ResponseMixin):
     """Base class for providers with basic identification information."""
 
     name: str
     display_name: str
     description: str | None
-    mandatory_base_fields: list[str] = ["name", "display_name"]
+    mandatory_base_fields: list[str] = ['name', 'display_name']
     path: str | None = None
-    provider_can_be_used: bool = True
-    priority: int = 0 # 0 - highest, 5 - lowest
+    abstract: bool = False
+    priority: int = 0  # 0 - highest, 5 - lowest
 
     def __init_subclass__(cls, **kwargs):
         """Automatically import required packages when subclass is defined."""
         super().__init_subclass__(**kwargs)
-        if hasattr(cls, "required_packages") and cls.required_packages:
+        if hasattr(cls, 'required_packages') and cls.required_packages:
             frame = sys._getframe(1)
             module_globals = frame.f_globals
             PackageMixin.safe_import_packages(cls.required_packages, module_globals)
 
     def __init__(self, **kwargs: str | None) -> None:
-        """Initialize a provider with required identification.
-
-        Args:
-            **kwargs: Provider attributes:
-                - name: Unique identifier for the provider (required).
-                - display_name: Human-readable name for the provider (defaults to name if not provided).
-                - description: Optional description of the provider.
-
-        Raises:
-            ValueError: If name or display_name is empty or not provided.
-        """
+        """Initialize a provider with required identification."""
         for field in self.mandatory_base_fields:
             setattr(self, field, kwargs.pop(field, getattr(self, field)))
             if not getattr(self, field):
-                raise ValueError(f"{field} is required and cannot be empty")
+                raise ValueError(f'{field} is required and cannot be empty')
 
-        config = kwargs.pop("config", None)
+        config = kwargs.pop('config', None)
         if config is not None:
             if isinstance(config, dict):
                 self._init_config(config)
@@ -59,7 +59,11 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
         for field, value in kwargs.items():
             setattr(self, field, value)
 
-    def _get_nested_value(self, data: dict[str, Any], path: str | list[str] | tuple[str, ...], default: Any = None) -> Any:
+        self._service_results_cache: dict[str, dict[str, Any]] = {}
+
+    def _get_nested_value(
+        self, data: dict[str, Any], path: str | list[str] | tuple[str, ...], default: Any = None
+    ) -> Any:
         if isinstance(path, (list, tuple)):
             for p in path:
                 value = self._get_nested_value(data, p, None)
@@ -69,7 +73,7 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
 
         if not path:
             return default
-        keys = path.split(".")
+        keys = path.split('.')
         val: Any = data
         for k in keys:
             if isinstance(val, dict):
@@ -89,7 +93,12 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
                 return default
         return val
 
-    def _normalize_recursive(self, data: dict[str, Any], field: str, source: str | list[str] | tuple[str, ...] | None) -> Any:
+    def _normalize_recursive(
+        self,
+        data: dict[str, Any] | Any,
+        field: str,
+        source: str | list[str] | tuple[str, ...] | None,
+    ) -> Any:
         if source is None:
             return None
         if isinstance(source, (tuple, list)):
@@ -98,24 +107,41 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
                 if value is not None:
                     return value
             return None
+        if callable(source):
+            return source(data)
         if isinstance(source, str):
-            if "." in source:
-                return self._get_nested_value(data, source)
-            return data.get(source)
+            if '.' in source:
+                parts = source.split('.')
+                current = data
+                for part in parts:
+                    if isinstance(current, dict):
+                        current = current.get(part)
+                    else:
+                        current = getattr(current, part, None)
+                    if current is None:
+                        return None
+                return current() if callable(current) else current
+            if isinstance(data, dict):
+                return data.get(source)
+            value = getattr(data, source, None)
+            if callable(value):
+                return value()
+            return value
         return source
 
-    def normalize(self, fields: list[str], data: dict[str, Any], fields_associations: dict[str, str | list[str] | tuple[str, ...] | None] | None = None) -> dict[str, Any]:
-        if fields_associations is None:
-            fields_associations = getattr(self, "fields_associations", {})
+    def normalize(
+        self, data: dict[str, Any], config: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        if config is None:
+            config = getattr(self, 'config', {})
+        fields = config.get('fields', {})
         normalized: dict[str, Any] = {}
-        for field in fields:
-            normalize_method = getattr(self, f"get_normalize_{field}", None)
+        for field, cfg in fields.items():
+            normalize_method = getattr(self, f'get_normalize_{field}', None)
             if normalize_method and callable(normalize_method):
                 value = normalize_method(data)
             else:
-                source = fields_associations.get(field)
-                value = self._normalize_recursive(data, field, source)
-            if value is not None:
-                normalized[field] = value
+                value = self._normalize_recursive(data, field, cfg.get('source', field))
+            label = cfg.get('label', field)
+            normalized[label] = value
         return normalized
-

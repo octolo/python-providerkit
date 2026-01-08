@@ -2,85 +2,192 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+from typing import Any
+
+FIELDS_SERVICE_BASE = {
+    'service_status_str': {
+        'label': 'Service status',
+        'description': 'Service status',
+        'format': 'str',
+    },
+    'missing_services': {
+        'label': 'Missing services',
+        'description': 'Missing services',
+        'format': 'list',
+    },
+    'services': {'label': 'Services', 'description': 'Services', 'format': 'list'},
+    'are_services_implemented': {
+        'label': 'Are services implemented',
+        'description': 'Are services implemented',
+        'format': 'bool',
+    },
+}
+
 
 class ServiceMixin:
-    """Mixin for managing required service methods.
+    """Mixin for managing required service methods."""
 
-    This mixin adds functionality to:
-    - Define required service methods
-    - Check if service methods are implemented
-    - Validate service implementation completeness
-    """
-
-    services: list[str] = []
+    services_cfg: dict[str, dict[str, Any]] = {}
+    services_authorized: list[str] = [
+        'check_services',
+        'get_required_services',
+        'get_missing_services',
+        'get_services_authorized',
+    ]
 
     def get_required_services(self) -> list[str]:
-        """Get the list of required service methods for this provider.
-
-        Returns:
-            List of service method names that must be implemented.
-        """
-        return getattr(self, "services", [])
+        """Get required service methods."""
+        return getattr(self, 'services', [])
 
     def is_service_implemented(self, service_name: str) -> bool:
-        """Check if a specific service method is implemented.
-
-        Args:
-            service_name: Name of the service method to check.
-
-        Returns:
-            True if the service method exists and is callable, False otherwise.
-        """
+        """Check if service method is implemented."""
         method = getattr(self, service_name, None)
         return callable(method) and not isinstance(method, type)
 
     def check_services(self) -> dict[str, bool]:
-        """Check implementation status of all required services.
-
-        Returns:
-            Dictionary mapping service names to their implementation status.
-        """
-        if hasattr(self, "_services_cache"):
-            cache: dict[str, bool] = getattr(self, "_services_cache", {})
-            return cache
+        """Check implementation status of all required services."""
+        if hasattr(self, '_services_cache'):
+            cached: dict[str, bool] = self._services_cache  # type: ignore[assignment]
+            return cached
 
         services = self.get_required_services()
-        status: dict[str, bool] = {service: self.is_service_implemented(service) for service in services}
+        status: dict[str, bool] = {
+            service: self.is_service_implemented(service) for service in services
+        }
         self._services_cache = status
         return status
 
     def clear_services_cache(self) -> None:
-        """Clear the cached service check results.
-
-        Call this method if services are dynamically added or modified.
-        """
-        if hasattr(self, "_services_cache"):
-            delattr(self, "_services_cache")
+        """Clear cached service check results."""
+        if hasattr(self, '_services_cache'):
+            delattr(self, '_services_cache')
 
     def are_services_implemented(self) -> bool:
-        """Check if all required services are implemented.
-
-        Returns:
-            True if all required services are implemented, False otherwise.
-        """
+        """Check if all required services are implemented."""
         status = self.check_services()
         return all(status.values())
 
     def get_missing_services(self) -> list[str]:
-        """Get list of required services that are not implemented.
-
-        Returns:
-            List of service names that are required but not implemented.
-        """
+        """Get list of missing services."""
         status = self.check_services()
         return [service for service, implemented in status.items() if not implemented]
 
     @property
     def missing_services(self) -> list[str]:
-        """Get list of required services that are not implemented.
-
-        Returns:
-            List of service names that are required but not implemented.
-        """
+        """Get list of missing services."""
         return self.get_missing_services()
 
+    @property
+    def services(self) -> list[str]:
+        """Get list of services."""
+        return list(self.services_cfg.keys())
+
+    @property
+    def service_status_str(self) -> str:
+        if self.are_services_implemented():
+            return '✓'
+        services = self.get_required_services()
+        if not services:
+            return 'N/A'
+        implemented_count = sum(1 for service in services if self.is_service_implemented(service))
+        total_count = len(services)
+
+        if implemented_count == total_count:
+            return '✓'
+        return f'{implemented_count}/{total_count}'
+
+    def _get_hash_service_args(self, *args: Any, **kwargs: Any) -> str:
+        """Generate hash from service arguments."""
+        try:
+            cache_data = json.dumps(
+                {'args': args, 'kwargs': sorted(kwargs.items())},
+                sort_keys=True,
+                default=str,
+            )
+            return hashlib.md5(cache_data.encode(), usedforsecurity=False).hexdigest()  # noqa: S324
+        except (TypeError, ValueError):
+            cache_data = f'{repr(args)}:{repr(sorted(kwargs.items()))}'
+            return hashlib.md5(cache_data.encode(), usedforsecurity=False).hexdigest()  # noqa: S324
+
+    def get_services_authorized(self) -> list[str]:
+        svc = list(self.services_authorized)
+        svc.extend(getattr(self, 'package_authorized', []))  # type: ignore[attr-defined]
+        svc.extend(getattr(self, 'config_authorized', []))  # type: ignore[attr-defined]
+        svc.extend(getattr(self, 'urls_authorized', []))  # type: ignore[attr-defined]
+        svc.extend(self.services_cfg.keys())
+        return svc
+
+    def call_service(self, service_name: str, *args: Any, **kwargs: Any) -> Any:
+        """Call service method with caching."""
+        if service_name not in self.get_services_authorized():
+            raise AttributeError(f"Service '{service_name}' do not appears in services list")
+
+        if not self.is_service_implemented(service_name):
+            raise AttributeError(f"Service '{service_name}' is not implemented")
+
+        if not hasattr(self, '_service_results_cache'):
+            self._service_results_cache: dict[str, dict[str, Any]] = {}
+
+        if service_name not in self._service_results_cache:
+            self._service_results_cache[service_name] = {}
+
+        service_args_hash = self._get_hash_service_args(*args, **kwargs)
+
+        if (
+            'hash' in self._service_results_cache[service_name]
+            and self._service_results_cache[service_name]['hash'] == service_args_hash
+            and 'result' in self._service_results_cache[service_name]
+        ):
+            return self._service_results_cache[service_name]['result']
+
+        method = getattr(self, service_name)
+        result = method(*args, **kwargs)
+        self._service_results_cache[service_name]['hash'] = service_args_hash
+        self._service_results_cache[service_name]['result'] = result
+        return result
+
+    def clear_service_results_cache(self) -> None:
+        """Clear cached service results."""
+        if hasattr(self, '_service_results_cache'):
+            self._service_results_cache.clear()
+
+    def get_service_results_cache(self) -> dict[str, dict[str, Any]]:
+        """Get cached service results."""
+        return getattr(self, '_service_results_cache', {})
+
+    def get_service_result(self, service_name: str) -> Any:
+        """Get cached service result."""
+        if not hasattr(self, '_service_results_cache'):
+            raise ValueError(f"No cache found for service '{service_name}'")
+
+        if service_name not in self._service_results_cache:
+            raise ValueError(f"Service '{service_name}' not found in cache")
+
+        return self._service_results_cache[service_name]['result']
+
+    def get_service_normalize(self, service_name: str, **kwargs: Any) -> dict[str, Any]:
+        """Get cached service result normalized."""
+        if not hasattr(self, '_service_results_cache'):
+            raise ValueError(f"No cache found for service '{service_name}'")
+
+        if service_name not in self._service_results_cache:
+            raise ValueError(f"Service '{service_name}' not found in cache")
+
+        if 'result' not in self._service_results_cache[service_name]:
+            raise ValueError(f"No result cached for service '{service_name}'")
+
+        result = self._service_results_cache[service_name]['result']
+        config = kwargs.get('services_cfg', self.services_cfg.get(service_name, {}))
+
+        normalize_func = getattr(self, 'normalize', lambda x, _: x)  # type: ignore[attr-defined]
+        if isinstance(result, list):
+            normalized: list[dict[str, Any]] = [normalize_func(item, config) for item in result]  # type: ignore[assignment]
+            return normalized  # type: ignore[return-value]
+
+        if isinstance(result, dict):
+            normalized_dict: dict[str, Any] = normalize_func(result, config)  # type: ignore[assignment]
+            return normalized_dict
+        normalized_single: dict[str, Any] = normalize_func(result, config)  # type: ignore[assignment]
+        return normalized_single

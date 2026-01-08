@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 cli_file_path = Path(__file__)
 
 
-
 def _discover_commands() -> dict[str, CommandInfo]:
     """Discover commands using default cli file path."""
     result: dict[str, CommandInfo] = discover_commands(cli_file_path)
@@ -38,5 +37,5 @@ def main(argv: Sequence[str] | None = None) -> int:
     return int(result) if isinstance(result, (int, bool)) else (0 if result else 1)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

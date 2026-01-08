@@ -5,38 +5,49 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import sys
-from types import ModuleType
+from typing import Any
+
+FIELDS_PACKAGE_BASE = {
+    'package_status_str': {
+        'label': 'Package status',
+        'description': 'Package status',
+        'format': 'str',
+    },
+    'required_packages': {
+        'label': 'Required packages',
+        'description': 'Required packages',
+        'format': 'list',
+    },
+    'missing_packages': {
+        'label': 'Missing packages',
+        'description': 'Missing packages',
+        'format': 'list',
+    },
+    'are_packages_installed': {
+        'label': 'Are packages installed',
+        'description': 'Are packages installed',
+        'format': 'bool',
+    },
+}
 
 
 class PackageMixin:
-    """Mixin for managing required packages and checking their installation.
-
-    This mixin adds functionality to:
-    - Define required packages
-    - Check if packages are installed
-    - List all required packages
-    """
+    """Mixin for managing required packages and checking their installation."""
 
     required_packages: list[str] = []
+    package_authorized: list[str] = [
+        'check_packages',
+        'get_required_packages',
+        'get_missing_packages',
+    ]
 
     def get_required_packages(self) -> list[str]:
-        """Get the list of required packages for this provider.
-
-        Returns:
-            List of package names that are required for this provider.
-        """
-        return getattr(self, "required_packages", [])
+        """Get required packages."""
+        return getattr(self, 'required_packages', [])
 
     def is_package_installed(self, package_name: str) -> bool:
-        """Check if a specific package is installed.
-
-        Args:
-            package_name: Name of the package to check.
-
-        Returns:
-            True if the package is installed, False otherwise.
-        """
-        normalized_name = package_name.replace("-", "_").replace(".", "_")
+        """Check if package is installed."""
+        normalized_name = package_name.replace('-', '_').replace('.', '_')
 
         try:
             spec = importlib.util.find_spec(normalized_name)
@@ -47,14 +58,10 @@ class PackageMixin:
             return False
 
     def check_packages(self) -> dict[str, bool]:
-        """Check installation status of all required packages.
-
-        Returns:
-            Dictionary mapping package names to their installation status.
-        """
-        if hasattr(self, "_packages_cache"):
-            cache: dict[str, bool] = getattr(self, "_packages_cache", {})
-            return cache
+        """Check installation status of all required packages."""
+        if hasattr(self, '_packages_cache'):
+            cached: dict[str, bool] = self._packages_cache  # type: ignore[assignment]
+            return cached
 
         packages = self.get_required_packages()
         status: dict[str, bool] = {pkg: self.is_package_installed(pkg) for pkg in packages}
@@ -62,102 +69,72 @@ class PackageMixin:
         return status
 
     def clear_packages_cache(self) -> None:
-        """Clear the cached package check results.
-
-        Call this method if packages are dynamically added or modified.
-        """
-        if hasattr(self, "_packages_cache"):
-            delattr(self, "_packages_cache")
+        """Clear cached package check results."""
+        if hasattr(self, '_packages_cache'):
+            delattr(self, '_packages_cache')
 
     def are_packages_installed(self) -> bool:
-        """Check if all required packages are installed.
-
-        Returns:
-            True if all required packages are installed, False otherwise.
-        """
+        """Check if all required packages are installed."""
         status = self.check_packages()
         return all(status.values())
 
     def get_missing_packages(self) -> list[str]:
-        """Get list of required packages that are not installed.
-
-        Returns:
-            List of package names that are required but not installed.
-        """
+        """Get list of missing packages."""
         status = self.check_packages()
         return [pkg for pkg, installed in status.items() if not installed]
 
     @property
     def missing_packages(self) -> list[str]:
-        """Get list of required packages that are not installed.
-
-        Returns:
-            List of package names that are required but not installed.
-        """
+        """Get list of missing packages."""
         return self.get_missing_packages()
 
     @classmethod
-    def safe_import_packages(cls, packages: list[str], globals_dict: dict[str, Any] | None = None) -> None:
-        """Import packages safely at module level.
+    def _import_single_package(
+        cls, package_name: str, globals_dict: dict[str, Any] | None = None
+    ) -> None:
+        """Import a single package with normalized name fallback."""
+        normalized_name = package_name.replace('-', '_').replace('.', '_')
 
-        This class method can be called at module level to import packages
-        before the class is instantiated.
-
-        Args:
-            packages: List of package names to import.
-            globals_dict: Dictionary (typically from globals()) to make
-                imported modules available in the calling namespace.
-        """
-        for package_name in packages:
-            normalized_name = package_name.replace("-", "_").replace(".", "_")
-
+        try:
+            module = importlib.import_module(normalized_name)  # nosec B307
+            sys.modules[package_name] = module
+            if globals_dict is not None:
+                globals_dict[package_name] = module
+                globals_dict[normalized_name] = module
+        except (ImportError, ModuleNotFoundError):
             try:
-                module = importlib.import_module(normalized_name)
-                sys.modules[package_name] = module
+                module = importlib.import_module(package_name)  # nosec B307
+                sys.modules[normalized_name] = module
                 if globals_dict is not None:
                     globals_dict[package_name] = module
                     globals_dict[normalized_name] = module
             except (ImportError, ModuleNotFoundError):
-                try:
-                    module = importlib.import_module(package_name)
-                    sys.modules[normalized_name] = module
-                    if globals_dict is not None:
-                        globals_dict[package_name] = module
-                        globals_dict[normalized_name] = module
-                except (ImportError, ModuleNotFoundError):
-                    continue
+                pass
+
+    @classmethod
+    def safe_import_packages(
+        cls, packages: list[str], globals_dict: dict[str, Any] | None = None
+    ) -> None:
+        """Import packages safely at module level."""
+        for package_name in packages:
+            cls._import_single_package(package_name, globals_dict)
 
     def safe_import(self, globals_dict: dict[str, Any] | None = None) -> None:
-        """Import required packages safely, skipping those that are not installed.
-
-        This method loops through required_packages and imports only those that are
-        available. Packages that are not installed are skipped and not imported.
-        This is useful for provider discovery when packages may not be installed.
-
-        The imported modules are registered in sys.modules and can be used
-        throughout the code after calling this method.
-
-        Args:
-            globals_dict: Optional dictionary (typically from globals()) to make
-                imported modules available in the calling namespace.
-        """
+        """Import required packages safely, skipping those that are not installed."""
         packages = self.get_required_packages()
         for package_name in packages:
-            normalized_name = package_name.replace("-", "_").replace(".", "_")
+            self._import_single_package(package_name, globals_dict)
 
-            try:
-                module = importlib.import_module(normalized_name)
-                sys.modules[package_name] = module
-                if globals_dict is not None:
-                    globals_dict[package_name] = module
-                    globals_dict[normalized_name] = module
-            except (ImportError, ModuleNotFoundError):
-                try:
-                    module = importlib.import_module(package_name)
-                    sys.modules[normalized_name] = module
-                    if globals_dict is not None:
-                        globals_dict[package_name] = module
-                        globals_dict[normalized_name] = module
-                except (ImportError, ModuleNotFoundError):
-                    continue
-
+    @property
+    def package_status_str(self) -> str:
+        """Get status of packages."""
+        if self.are_packages_installed():
+            return '✓'
+        packages = self.get_required_packages()
+        if not packages:
+            return 'N/A'
+        installed_count = sum(1 for package in packages if self.is_package_installed(package))
+        total_count = len(packages)
+        if installed_count == total_count:
+            return '✓'
+        return f'{installed_count}/{total_count}'

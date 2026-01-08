@@ -3,146 +3,121 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from qualitybase.commands.base import Command
 from qualitybase.cli import _get_package_name as _get_package_name_from_context  # noqa: TID252
+from qualitybase.commands import parse_args_from_config
+from qualitybase.commands.base import Command
+from qualitybase.services.utils import print_header, print_separator
 
-from ..helpers import get_providers, try_providers, try_providers_first  # noqa: TID252
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from providerkit.helpers import get_providerkit
 
 
-def _list_providers(args: list[str]) -> bool:  # noqa: ARG001
-    """List providers.
+# Configuration des arguments pour le parser
+_ARG_CONFIG = {
+    'format': {'type': str, 'default': 'terminal'},
+    'command': {'type': str, 'nargs': '*', 'default': []},
+    'first': {'type': 'store_true'},
+    'raw': {'type': 'store_true'},
+    'dir': {'type': str},
+    'json': {'type': str},
+    'filter': {'type': str},
+    'backend': {'type': str},
+    'attr': {'type': str, 'nargs': '*', 'default': []},
+}
 
-    Args:
-        args: Command arguments.
 
-    Returns:
-        True if command executed successfully, False otherwise.
-    """
-    return True
+def _parse_all_args(args: list[str]) -> dict[str, Any]:
+    return parse_args_from_config(args, _ARG_CONFIG, prog='provider')
 
-def _provider_command(args: list[str]) -> bool:  # noqa: C901
-    """List and filter providers.
 
-    Args:
-        args: Command arguments.
+def _execute_command(
+    command: str,
+    first: bool,
+    raw: bool,
+    output_format: str,
+    additional_args: dict[str, str | bool],
+) -> None:
+    """Execute the provider command."""
+    package_name = _get_package_name_from_context()
+    pvk = get_providerkit(**additional_args)
 
-    Returns:
-        True if command executed successfully, False otherwise.
-    """
-    output_format = "table"
-    dir_path: str | Path | None = None
-    json_path: str | Path | None = None
-    query_string: str | None = None
-    mode: str = "list"
-    mode_args: dict[str, str | bool] = {}
-    first: bool = False
-    raw: bool = False
-    additional_args: dict[str, str | bool] = {}
-    attribute_search: dict[str, str] = {}
-
-    i = 0
-    while i < len(args):
-        arg = args[i]
-        if arg == "--mode" and i + 1 < len(args):
-            mode = args[i + 1]
-            i += 2
-            first_positional = True
-            while i < len(args) and not args[i].startswith("--"):
-                mode_arg = args[i]
-                if "=" in mode_arg:
-                    key, value = mode_arg.split("=", 1)
-                    additional_args[key] = value
-                    first_positional = False
-                else:
-                    if first_positional:
-                        additional_args["query"] = mode_arg
-                        first_positional = False
-                    else:
-                        additional_args[mode_arg] = True
-                i += 1
-        elif arg == "--attr":
-            i += 1
-            while i < len(args) and not args[i].startswith("--"):
-                attr_arg = args[i]
-                if "=" in attr_arg:
-                    key, value = attr_arg.split("=", 1)
-                    attribute_search[key] = value
-                else:
-                    print(f"Invalid attribute format: {attr_arg}. Expected format: key=value", file=sys.stderr)
-                    return False
-                i += 1
-        elif arg == "--format" and i + 1 < len(args):
-            output_format = args[i + 1]
-            i += 2
-        elif arg == "--dir" and i + 1 < len(args):
-            dir_path = args[i + 1]
-            i += 2
-        elif arg == "--json" and i + 1 < len(args):
-            json_path = args[i + 1]
-            i += 2
-        elif arg == "--filter" or arg == "--backend":
-            query_string = args[i + 1]
-            i += 2
-        elif arg == "--first":
-            first = True
-            i += 1
-        elif arg == "--raw":
-            raw = True
-            i += 1
-        else:
-            print(f"Unknown argument: {arg}", file=sys.stderr)
-            return False
-
-    lib_name = _get_package_name_from_context()
-
-    providers_args: dict[str, Any] = {
-        "format": output_format,
-        "json": json_path,
-        "lib_name": lib_name,
-        "dir_path": dir_path,
-        "query_string": query_string,
-    }
-
-    if attribute_search:
-        providers_args["attribute_search"] = attribute_search
-
-    if mode_args:
-        print(f"\nMode arguments for {mode}: {mode_args}\n")
-
-    if mode == "list":
-        providers_result = get_providers(
-            format=output_format,
-            json=json_path,
-            lib_name=lib_name,
-            dir_path=dir_path,
-            query_string=query_string,
-            attribute_search=attribute_search if attribute_search else None,
-        )
-        print(providers_result)
-        return True
-
-    providers_args.update(mode_args)
-    if raw:
-        additional_args["raw"] = True
-    providers_args["additional_args"] = additional_args
-
-    if first:
-        result = try_providers_first(
-            command=mode,
-            **providers_args,
-        )
+    if command in ['get_providers', 'get_config', 'get_package', 'get_service', 'get_urls']:
+        pvk.call_service(command, lib_name=package_name, **additional_args)
+        print(pvk.response(command, raw, format=output_format))
     else:
-        result = try_providers(
-            command=mode,
-            **providers_args,
-        )
+        pvk.execute_providers(command, first, **additional_args)
 
-    print(result)
+        for pv in pvk.get_service_result(command):
+            provider = pv['provider']
+            print_separator()
+            print_header(provider.name)
+            print_separator()
+            print(provider.response(command, raw, format=output_format))
+            print()
+
+
+def _provider_command(args: list[str]) -> bool:
+    """Execute provider command with parsed arguments."""
+    parsed = _parse_all_args(args)
+    
+    if not parsed:
+        return False
+    
+    output_format = parsed.get('format', 'terminal')
+    
+    command: str = 'get_providers'
+    additional_args: dict[str, str | bool] = {}
+    
+    if 'command' in parsed:
+        cmd_data = parsed['command']
+        if isinstance(cmd_data, dict) and 'args' in cmd_data:
+            if cmd_data['args']:
+                command = cmd_data['args'][0]
+                if len(cmd_data['args']) > 1:
+                    additional_args['query'] = cmd_data['args'][1]
+                for arg in cmd_data['args'][2:]:
+                    additional_args[arg] = True
+            additional_args.update(cmd_data.get('kwargs', {}))
+    
+    first = parsed.get('first', False)
+    raw = parsed.get('raw', False)
+    
+    if 'dir' in parsed:
+        dir_val = parsed['dir']
+        if isinstance(dir_val, str):
+            additional_args['dir_path'] = dir_val
+    
+    if 'json' in parsed:
+        json_val = parsed['json']
+        if isinstance(json_val, str):
+            additional_args['json'] = json_val
+    
+    if 'filter' in parsed:
+        filter_val = parsed['filter']
+        if isinstance(filter_val, str):
+            additional_args['query'] = filter_val
+    elif 'backend' in parsed:
+        backend_val = parsed['backend']
+        if isinstance(backend_val, str):
+            additional_args['query'] = backend_val
+    
+    attribute_search: dict[str, str] = {}
+    if 'attr' in parsed:
+        attr_data = parsed['attr']
+        if isinstance(attr_data, dict):
+            if attr_data.get('args'):
+                print(
+                    f'Invalid attribute format: positional arguments not allowed. Expected format: key=value', file=sys.stderr
+                )
+                return False
+            attribute_search = attr_data.get('kwargs', {})
+            additional_args['attribute_search'] = attribute_search
+    
+    _execute_command(command, first, raw, output_format, additional_args,)
     return True
 
-provider_command = Command(_provider_command, "List and filter providers (use --list [query] --format [table|json|xml])")
+
+provider_command = Command(
+    _provider_command, 'List and filter providers (use --list [query] --format [terminal|json|xml])'
+)
