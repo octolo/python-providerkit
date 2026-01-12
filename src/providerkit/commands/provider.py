@@ -14,16 +14,20 @@ from providerkit.helpers import get_providerkit
 
 
 # Configuration des arguments pour le parser
-_ARG_CONFIG = {
+_PROVIDER_COMMAND_CONFIG = {
     'format': {'type': str, 'default': 'terminal'},
-    'command': {'type': str, 'nargs': '*', 'default': []},
     'first': {'type': 'store_true'},
     'raw': {'type': 'store_true'},
-    'dir': {'type': str},
-    'json': {'type': str},
     'filter': {'type': str},
     'backend': {'type': str},
     'attr': {'type': str, 'nargs': '*', 'default': []},
+}
+
+_ARG_CONFIG = {
+    **_PROVIDER_COMMAND_CONFIG,
+    'command': {'type': str, 'nargs': '*', 'default': []},
+    'dir': {'type': str},
+    'json': {'type': str},
 }
 
 

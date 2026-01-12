@@ -42,6 +42,7 @@ def get_providerkit(**kwargs: Any) -> ProviderListConfig | ProviderListFolder | 
 
 
 def get_providers(**kwargs: Any) -> list[ProviderBase]:
+    print("kwargs", kwargs)
     pvk = get_providerkit(**kwargs)
     lib_name = kwargs.pop('lib_name', 'providerkit')
     return pvk.get_providers(lib_name=lib_name, **kwargs)
@@ -49,6 +50,7 @@ def get_providers(**kwargs: Any) -> list[ProviderBase]:
 
 def call_providers(**kwargs: Any) -> list[dict[str, Any]]:
     lib_name = kwargs.pop('lib_name', 'providerkit')
+    command = kwargs.pop('command', 'get_providers')
     pvs = get_providers(lib_name=lib_name, **kwargs)
     results = []
     for provider in pvs:
@@ -56,7 +58,7 @@ def call_providers(**kwargs: Any) -> list[dict[str, Any]]:
             {
                 'name': provider.name,
                 'provider': provider,
-                'result': provider.call_service(kwargs.get('command', 'get_providers'), **kwargs),
+                'result': provider.call_service(command, **kwargs),
             }
         )
     return results

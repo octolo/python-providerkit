@@ -33,6 +33,7 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
     path: str | None = None
     abstract: bool = False
     priority: int = 0  # 0 - highest, 5 - lowest
+    provider_key: str = 'label'
 
     def __init_subclass__(cls, **kwargs):
         """Automatically import required packages when subclass is defined."""
@@ -129,6 +130,10 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
             return value
         return source
 
+    def insert_data_normalized(self, data_normalized: Any) -> Any:
+        """Insert additional data into normalized result. Can be overridden by providers."""
+        return data_normalized
+
     def normalize(
         self, data: dict[str, Any], config: dict[str, Any] | None = None
     ) -> dict[str, Any]:
@@ -142,6 +147,10 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
                 value = normalize_method(data)
             else:
                 value = self._normalize_recursive(data, field, cfg.get('source', field))
-            label = cfg.get('label', field)
+            if self.provider_key == 'key':
+                label = field
+            else:
+                label = cfg.get(self.provider_key, field)
             normalized[label] = value
+        normalized = self.insert_data_normalized(normalized)
         return normalized
