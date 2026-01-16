@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from typing import Any
+import copy
 
 FIELDS_SERVICE_BASE = {
     'service_status_str': {
@@ -28,14 +29,17 @@ FIELDS_SERVICE_BASE = {
 
 class ServiceMixin:
     """Mixin for managing required service methods."""
-
-    services_cfg: dict[str, dict[str, Any]] = {}
+    _default_services_cfg: dict[str, dict[str, Any]] = {}
     services_authorized: list[str] = [
         'check_services',
         'get_required_services',
         'get_missing_services',
         'get_services_authorized',
     ]
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.services_cfg = copy.deepcopy(cls._default_services_cfg)
 
     def get_required_services(self) -> list[str]:
         """Get required service methods."""
@@ -143,7 +147,10 @@ class ServiceMixin:
             return self._service_results_cache[service_name]['result']
 
         method = getattr(self, service_name)
-        result = method(*args, **kwargs)
+        try:
+            result = method(*args, **kwargs)
+        except Exception as e:
+            result = {'error': str(e)}
         self._service_results_cache[service_name]['hash'] = service_args_hash
         self._service_results_cache[service_name]['result'] = result
         return result
@@ -179,8 +186,14 @@ class ServiceMixin:
             raise ValueError(f"No result cached for service '{service_name}'")
 
         result = self._service_results_cache[service_name]['result']
+        
+        # Check if result contains an error - if so, return only the error
+        if isinstance(result, dict) and 'error' in result:
+            return {'error': result['error']}
+        if isinstance(result, list) and result and isinstance(result[0], dict) and 'error' in result[0]:
+            return {'error': result[0]['error']}
+        
         config = kwargs.get('services_cfg', self.services_cfg.get(service_name, {}))
-
         normalize_func = getattr(self, 'normalize', lambda x, _: x)  # type: ignore[attr-defined]
         if isinstance(result, list):
             normalized: list[dict[str, Any]] = [normalize_func(item, config) for item in result]  # type: ignore[assignment]

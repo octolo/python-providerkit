@@ -4,7 +4,7 @@ from providerkit import ProviderBase
 
 
 class AlphabetProvider(ProviderBase):
-    services = ["get_alphabet", "calculate_letters"]
+    _default_services_cfg = ["get_alphabet", "calculate_letters"]
 
     def calculate_format_count(self, letters: list[str]) -> int:
         """Calculate count format: number of elements in the list.

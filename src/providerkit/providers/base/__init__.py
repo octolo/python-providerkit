@@ -49,7 +49,7 @@ class ProviderListBase(ProviderBase, ProviderListSort, ProviderListFilter, Provi
     documentation_url = 'https://pypi.org/project/providerkit/'
     site_url = 'https://github.com/hicinformatic/python-providerkit'
     status_url = 'https://github.com/hicinformatic/python-providerkit'
-    services_cfg = {
+    _default_services_cfg = {
         'get_providers': {'label': 'Get providers', 'description': 'Get providers', 'fields': FIELDS_GET_PROVIDERS},
         'get_infos': {'label': 'Get infos', 'description': 'Get infos', 'fields': {**FIELDS_PROVIDER_BASE, **FIELDS_GET_INFOS}},
         'get_config': {'label': 'Get config', 'description': 'Get config', 'fields': {**FIELDS_SERVICE_DEFAULTS, **FIELDS_CONFIG_BASE}},
