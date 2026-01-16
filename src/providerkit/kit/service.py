@@ -39,6 +39,7 @@ class ServiceMixin:
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+        cls.current_service_name = None
         cls.services_cfg = copy.deepcopy(cls._default_services_cfg)
 
     def get_required_services(self) -> list[str]:
@@ -176,6 +177,7 @@ class ServiceMixin:
 
     def get_service_normalize(self, service_name: str, **kwargs: Any) -> dict[str, Any]:
         """Get cached service result normalized."""
+        self.current_service_name = service_name
         if not hasattr(self, '_service_results_cache'):
             raise ValueError(f"No cache found for service '{service_name}'")
 
@@ -203,4 +205,5 @@ class ServiceMixin:
             normalized_dict: dict[str, Any] = normalize_func(result, config)  # type: ignore[assignment]
             return normalized_dict
         normalized_single: dict[str, Any] = normalize_func(result, config)  # type: ignore[assignment]
+        self.current_service_name = None
         return normalized_single
