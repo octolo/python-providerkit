@@ -130,42 +130,37 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
             return value
         return source
 
-    def get_insert_data_value(self, item: dict[str, Any], field: str, field_cfg: dict[str, Any]) -> Any:
+    def get_insert_data_value(self, data: Any, normalized: dict[str, Any], field: str, field_cfg: dict[str, Any]) -> Any:
         value = getattr(self, field, None)
         if hasattr(self, f'get_insert_normalized_{field}') and callable(getattr(self, f'get_insert_normalized_{field}')):
-            value = getattr(self, f'get_insert_normalized_{field}')(item, field_cfg)
+            value = getattr(self, f'get_insert_normalized_{field}')(data, normalized, field_cfg)
         return value
 
-    def insert_data_as_list(self, data_normalized: list[dict[str, Any]], config: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-        if config is None:
-            config = {}
+    def insert_data_as_list(self, data: Any, normalized: list[dict[str, Any]], config: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         cfg = config.get('fields', {}) if isinstance(config, dict) and 'fields' in config else config
-        for item in data_normalized:
+        for item in normalized:
             item_keys = item.keys()
             for field, field_cfg in cfg.items():
-                if field not in item_keys:
-                    item[field] = self.get_insert_data_value(item, field, field_cfg)
-        return data_normalized
+                if field in item_keys and item[field] is None:
+                    item[field] = self.get_insert_data_value(data, normalized, field, field_cfg)
+        return normalized
 
-    def insert_data_as_dict(self, data_normalized: dict[str, Any], config: dict[str, Any] | None = None) -> dict[str, Any]:
-        if config is None:
-            config = {}
+    def insert_data_as_dict(self, data: Any, normalized: dict[str, Any], config: dict[str, Any] | None = None) -> dict[str, Any]:
         cfg = config.get('fields', {}) if isinstance(config, dict) and 'fields' in config else config
-        item_keys = data_normalized.keys()
+        item_keys = normalized.keys()
         for field, field_cfg in cfg.items():
-            if field not in item_keys:
-                data_normalized[field] = self.get_insert_data_value(data_normalized, field, field_cfg)
-        return data_normalized
+            if field in item_keys and normalized[field] is None:
+                normalized[field] = self.get_insert_data_value(data, normalized, field, field_cfg)
+        return normalized
 
-    def insert_data_normalized(self, data_normalized: Any, config: dict[str, Any] | None = None) -> Any:
+    def insert_data_normalized(self, data: Any, normalized: Any, config: dict[str, Any] | None = None) -> Any:
         """Insert additional data into normalized result. Can be overridden by providers."""
-        if config is None:
-            config = self.services_cfg.get(self.current_service_name, {}) if hasattr(self, 'current_service_name') and self.current_service_name else {}
-        if isinstance(data_normalized, list):
-            data_normalized = self.insert_data_as_list(data_normalized, config)
-        elif isinstance(data_normalized, dict):
-            data_normalized = self.insert_data_as_dict(data_normalized, config)
-        return data_normalized
+        config = self.services_cfg.get(self.current_service_name, config) 
+        if isinstance(normalized, list):
+            normalized = self.insert_data_as_list(data, normalized, config)
+        elif isinstance(normalized, dict):
+            normalized = self.insert_data_as_dict(data, normalized, config)
+        return normalized
 
     def normalize(
         self, data: dict[str, Any], config: dict[str, Any] | None = None
@@ -185,5 +180,5 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
             else:
                 label = cfg.get(self.provider_key, field)
             normalized[label] = value
-        normalized = self.insert_data_normalized(normalized, config)
+        normalized = self.insert_data_normalized(data, normalized, config)
         return normalized

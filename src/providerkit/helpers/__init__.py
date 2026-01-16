@@ -62,5 +62,10 @@ def call_providers(**kwargs: Any) -> list[dict[str, Any]]:
             result['result'] = provider.call_service(command, **kwargs)
         except Exception as e:
             result['error'] = str(e)
+            if not hasattr(provider, '_service_results_cache'):
+                provider._service_results_cache: dict[str, dict[str, Any]] = {}
+            if command not in provider._service_results_cache:
+                provider._service_results_cache[command] = {}
+            provider._service_results_cache[command]['result'] = {'error': str(e)}
         results.append(result)
     return results

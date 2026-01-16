@@ -126,12 +126,6 @@ class ServiceMixin:
 
     def call_service(self, service_name: str, *args: Any, **kwargs: Any) -> Any:
         """Call service method with caching."""
-        if service_name not in self.get_services_authorized():
-            raise AttributeError(f"Service '{service_name}' do not appears in services list")
-
-        if not self.is_service_implemented(service_name):
-            raise AttributeError(f"Service '{service_name}' is not implemented")
-
         if not hasattr(self, '_service_results_cache'):
             self._service_results_cache: dict[str, dict[str, Any]] = {}
 
@@ -146,6 +140,18 @@ class ServiceMixin:
             and 'result' in self._service_results_cache[service_name]
         ):
             return self._service_results_cache[service_name]['result']
+
+        if service_name not in self.get_services_authorized():
+            error_result = {'error': f"Service '{service_name}' do not appears in services list"}
+            self._service_results_cache[service_name]['hash'] = service_args_hash
+            self._service_results_cache[service_name]['result'] = error_result
+            raise AttributeError(f"Service '{service_name}' do not appears in services list")
+
+        if not self.is_service_implemented(service_name):
+            error_result = {'error': f"Service '{service_name}' is not implemented"}
+            self._service_results_cache[service_name]['hash'] = service_args_hash
+            self._service_results_cache[service_name]['result'] = error_result
+            raise AttributeError(f"Service '{service_name}' is not implemented")
 
         method = getattr(self, service_name)
         try:
@@ -186,24 +192,25 @@ class ServiceMixin:
 
         if 'result' not in self._service_results_cache[service_name]:
             raise ValueError(f"No result cached for service '{service_name}'")
-
-        result = self._service_results_cache[service_name]['result']
-        
+        result = self._service_results_cache[service_name]['result']        
         # Check if result contains an error - if so, return only the error
         if isinstance(result, dict) and 'error' in result:
             return {'error': result['error']}
         if isinstance(result, list) and result and isinstance(result[0], dict) and 'error' in result[0]:
             return {'error': result[0]['error']}
-        
+
         config = kwargs.get('services_cfg', self.services_cfg.get(service_name, {}))
+        result = self.serialize_data(result, config)
+        self.current_service_name = None
+        return result
+
+    def serialize_data(self, result: Any, config: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
         normalize_func = getattr(self, 'normalize', lambda x, _: x)  # type: ignore[attr-defined]
         if isinstance(result, list):
             normalized: list[dict[str, Any]] = [normalize_func(item, config) for item in result]  # type: ignore[assignment]
             return normalized  # type: ignore[return-value]
-
         if isinstance(result, dict):
             normalized_dict: dict[str, Any] = normalize_func(result, config)  # type: ignore[assignment]
             return normalized_dict
         normalized_single: dict[str, Any] = normalize_func(result, config)  # type: ignore[assignment]
-        self.current_service_name = None
         return normalized_single
