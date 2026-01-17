@@ -115,7 +115,16 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
                 parts = source.split('.')
                 current = data
                 for part in parts:
-                    if isinstance(current, dict):
+                    if isinstance(current, list):
+                        try:
+                            index = int(part)
+                            if 0 <= index < len(current):
+                                current = current[index]
+                            else:
+                                return None
+                        except ValueError:
+                            return None
+                    elif isinstance(current, dict):
                         current = current.get(part)
                     else:
                         current = getattr(current, part, None)
