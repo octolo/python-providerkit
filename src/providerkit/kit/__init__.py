@@ -138,15 +138,19 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
 
     def insert_data_as_list(self, data: Any, normalized: list[dict[str, Any]], config: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         cfg = config.get('fields', {}) if isinstance(config, dict) and 'fields' in config else config
+        if cfg is None:
+            return normalized
         for item in normalized:
             item_keys = item.keys()
             for field, field_cfg in cfg.items():
                 if field in item_keys and item[field] is None:
-                    item[field] = self.get_insert_data_value(data, normalized, field, field_cfg)
+                    item[field] = self.get_insert_data_value(data, item, field, field_cfg)
         return normalized
 
     def insert_data_as_dict(self, data: Any, normalized: dict[str, Any], config: dict[str, Any] | None = None) -> dict[str, Any]:
         cfg = config.get('fields', {}) if isinstance(config, dict) and 'fields' in config else config
+        if cfg is None:
+            return normalized
         item_keys = normalized.keys()
         for field, field_cfg in cfg.items():
             if field in item_keys and normalized[field] is None:
@@ -155,7 +159,7 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
 
     def insert_data_normalized(self, data: Any, normalized: Any, config: dict[str, Any] | None = None) -> Any:
         """Insert additional data into normalized result. Can be overridden by providers."""
-        config = self.services_cfg.get(self.current_service_name, config) 
+        config = getattr(self, 'services_cfg', {}).get(getattr(self, 'current_service_name', None), config) or config
         if isinstance(normalized, list):
             normalized = self.insert_data_as_list(data, normalized, config)
         elif isinstance(normalized, dict):

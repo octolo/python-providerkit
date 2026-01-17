@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
-from typing import Any
-import copy
+from typing import Any, cast
 
 FIELDS_SERVICE_BASE = {
     'service_status_str': {
@@ -54,8 +54,8 @@ class ServiceMixin:
     def check_services(self) -> dict[str, bool]:
         """Check implementation status of all required services."""
         if hasattr(self, '_services_cache'):
-            cached: dict[str, bool] = self._services_cache  # type: ignore[assignment]
-            return cached
+            cached = getattr(self, '_services_cache', {})
+            return cast(dict[str, bool], cached)
 
         services = self.get_required_services()
         status: dict[str, bool] = {
@@ -87,7 +87,7 @@ class ServiceMixin:
     @property
     def services(self) -> list[str]:
         """Get list of services."""
-        return list(self.services_cfg.keys())
+        return list(getattr(self, 'services_cfg', {}).keys())
 
     @property
     def service_status_str(self) -> str:
@@ -118,10 +118,10 @@ class ServiceMixin:
 
     def get_services_authorized(self) -> list[str]:
         svc = list(self.services_authorized)
-        svc.extend(getattr(self, 'package_authorized', []))  # type: ignore[attr-defined]
-        svc.extend(getattr(self, 'config_authorized', []))  # type: ignore[attr-defined]
-        svc.extend(getattr(self, 'urls_authorized', []))  # type: ignore[attr-defined]
-        svc.extend(self.services_cfg.keys())
+        svc.extend(cast(list[str], getattr(self, 'package_authorized', [])))
+        svc.extend(cast(list[str], getattr(self, 'config_authorized', [])))
+        svc.extend(cast(list[str], getattr(self, 'urls_authorized', [])))
+        svc.extend(getattr(self, 'services_cfg', {}).keys())
         return svc
 
     def call_service(self, service_name: str, *args: Any, **kwargs: Any) -> Any:
@@ -154,13 +154,14 @@ class ServiceMixin:
             raise AttributeError(f"Service '{service_name}' is not implemented")
 
         method = getattr(self, service_name)
+        self._service_results_cache[service_name]['hash'] = service_args_hash
         try:
             result = method(*args, **kwargs)
+            self._service_results_cache[service_name]['result'] = result
+            return result
         except Exception as e:
-            result = {'error': str(e)}
-        self._service_results_cache[service_name]['hash'] = service_args_hash
-        self._service_results_cache[service_name]['result'] = result
-        return result
+            self._service_results_cache[service_name]['error'] = str(e)
+            raise e
 
     def clear_service_results_cache(self) -> None:
         """Clear cached service results."""
@@ -181,7 +182,7 @@ class ServiceMixin:
 
         return self._service_results_cache[service_name]['result']
 
-    def get_service_normalize(self, service_name: str, **kwargs: Any) -> dict[str, Any]:
+    def get_service_normalize(self, service_name: str, **kwargs: Any) -> dict[str, Any] | list[dict[str, Any]]:
         """Get cached service result normalized."""
         self.current_service_name = service_name
         if not hasattr(self, '_service_results_cache'):
@@ -192,25 +193,29 @@ class ServiceMixin:
 
         if 'result' not in self._service_results_cache[service_name]:
             raise ValueError(f"No result cached for service '{service_name}'")
-        result = self._service_results_cache[service_name]['result']        
+        result = self._service_results_cache[service_name]['result']
         # Check if result contains an error - if so, return only the error
         if isinstance(result, dict) and 'error' in result:
             return {'error': result['error']}
         if isinstance(result, list) and result and isinstance(result[0], dict) and 'error' in result[0]:
             return {'error': result[0]['error']}
 
-        config = kwargs.get('services_cfg', self.services_cfg.get(service_name, {}))
+        config = kwargs.get('services_cfg') or getattr(self, 'services_cfg', {}).get(service_name, {})
         result = self.serialize_data(result, config)
-        self.current_service_name = None
+        setattr(self, 'current_service_name', None)
         return result
 
-    def serialize_data(self, result: Any, config: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
-        normalize_func = getattr(self, 'normalize', lambda x, _: x)  # type: ignore[attr-defined]
+    def serialize_data(self, result: Any, config: dict[str, Any], **_kwargs: Any) -> dict[str, Any] | list[dict[str, Any]]:
+        from collections.abc import Callable
+        normalize_func: Callable[[Any, dict[str, Any]], dict[str, Any]] = cast(
+            Callable[[Any, dict[str, Any]], dict[str, Any]],
+            getattr(self, 'normalize', lambda x, _: x)
+        )
         if isinstance(result, list):
-            normalized: list[dict[str, Any]] = [normalize_func(item, config) for item in result]  # type: ignore[assignment]
-            return normalized  # type: ignore[return-value]
+            normalized = [cast(dict[str, Any], normalize_func(item, config)) for item in result]
+            return normalized
         if isinstance(result, dict):
-            normalized_dict: dict[str, Any] = normalize_func(result, config)  # type: ignore[assignment]
+            normalized_dict = cast(dict[str, Any], normalize_func(result, config))
             return normalized_dict
-        normalized_single: dict[str, Any] = normalize_func(result, config)  # type: ignore[assignment]
+        normalized_single = cast(dict[str, Any], normalize_func(result, config))
         return normalized_single

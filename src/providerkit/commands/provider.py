@@ -12,7 +12,6 @@ from qualitybase.services.utils import print_header, print_separator
 
 from providerkit.helpers import get_providerkit
 
-
 # Configuration des arguments pour le parser
 _PROVIDER_COMMAND_CONFIG = {
     'format': {'type': str, 'default': 'terminal'},
@@ -64,15 +63,15 @@ def _execute_command(
 def _provider_command(args: list[str]) -> bool:
     """Execute provider command with parsed arguments."""
     parsed = _parse_all_args(args)
-    
+
     if not parsed:
         return False
-    
+
     output_format = parsed.get('format', 'terminal')
-    
+
     command: str = 'get_providers'
     additional_args: dict[str, str | bool] = {}
-    
+
     if 'command' in parsed:
         cmd_data = parsed['command']
         if isinstance(cmd_data, dict) and 'args' in cmd_data:
@@ -83,20 +82,20 @@ def _provider_command(args: list[str]) -> bool:
                 for arg in cmd_data['args'][2:]:
                     additional_args[arg] = True
             additional_args.update(cmd_data.get('kwargs', {}))
-    
+
     first = parsed.get('first', False)
     raw = parsed.get('raw', False)
-    
+
     if 'dir' in parsed:
         dir_val = parsed['dir']
         if isinstance(dir_val, str):
             additional_args['dir_path'] = dir_val
-    
+
     if 'json' in parsed:
         json_val = parsed['json']
         if isinstance(json_val, str):
             additional_args['json'] = json_val
-    
+
     if 'filter' in parsed:
         filter_val = parsed['filter']
         if isinstance(filter_val, str):
@@ -105,19 +104,19 @@ def _provider_command(args: list[str]) -> bool:
         backend_val = parsed['backend']
         if isinstance(backend_val, str):
             additional_args['query'] = backend_val
-    
+
     attribute_search: dict[str, str] = {}
     if 'attr' in parsed:
         attr_data = parsed['attr']
         if isinstance(attr_data, dict):
             if attr_data.get('args'):
                 print(
-                    f'Invalid attribute format: positional arguments not allowed. Expected format: key=value', file=sys.stderr
+                    'Invalid attribute format: positional arguments not allowed. Expected format: key=value', file=sys.stderr
                 )
                 return False
             attribute_search = attr_data.get('kwargs', {})
             additional_args['attribute_search'] = attribute_search
-    
+
     _execute_command(command, first, raw, output_format, additional_args,)
     return True
 

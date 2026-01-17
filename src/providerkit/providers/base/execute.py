@@ -1,4 +1,7 @@
-from typing import Any
+from collections.abc import Callable
+from typing import Any, cast
+
+from providerkit.kit import ProviderBase
 
 
 class ProviderListExecute:
@@ -9,7 +12,8 @@ class ProviderListExecute:
     ) -> tuple[list[dict[str, Any]], str]:
         """Execute each provider."""
         lib_name = kwargs.get('lib_name', 'providerkit')
-        providers = self.get_providers(lib_name=lib_name)  # type: ignore[attr-defined]
+        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        providers = get_providers_func(lib_name=lib_name)
         if not providers:
             raise RuntimeError('No providers available')
         pv_executed = []

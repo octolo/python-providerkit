@@ -5,7 +5,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import sys
-from typing import Any
+from typing import Any, cast
 
 FIELDS_PACKAGE_BASE = {
     'package_status_str': {
@@ -60,8 +60,8 @@ class PackageMixin:
     def check_packages(self) -> dict[str, bool]:
         """Check installation status of all required packages."""
         if hasattr(self, '_packages_cache'):
-            cached: dict[str, bool] = self._packages_cache  # type: ignore[assignment]
-            return cached
+            cached = getattr(self, '_packages_cache', {})
+            return cast(dict[str, bool], cached)
 
         packages = self.get_required_packages()
         status: dict[str, bool] = {pkg: self.is_package_installed(pkg) for pkg in packages}

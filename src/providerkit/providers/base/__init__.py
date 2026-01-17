@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Callable
+from typing import Any, cast
 
 from providerkit.kit import FIELDS_PROVIDER_BASE, ProviderBase
 from providerkit.kit.config import FIELDS_CONFIG_BASE
+from providerkit.kit.cost import FIELDS_COSTS_BASE
 from providerkit.kit.package import FIELDS_PACKAGE_BASE
 from providerkit.kit.service import FIELDS_SERVICE_BASE
 from providerkit.kit.urls import FIELDS_URLS_BASE
-from providerkit.kit.cost import FIELDS_COSTS_BASE
 
 from .execute import ProviderListExecute
 from .filter import ProviderListFilter
@@ -60,27 +61,34 @@ class ProviderListBase(ProviderBase, ProviderListSort, ProviderListFilter, Provi
     }
 
     def get_infos(self) -> dict[str, Any]:
-        return self  # type: ignore[return-value]
+        return cast(dict[str, Any], self.__dict__)
 
     def get_config(self, *args, **kwargs) -> list[ProviderBase]:
-        return self.get_providers(*args, **kwargs)  # type: ignore[attr-defined]
+        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        return get_providers_func(*args, **kwargs)
 
     def get_package(self, *args, **kwargs) -> list[ProviderBase]:
-        return self.get_providers(*args, **kwargs)  # type: ignore[attr-defined]
+        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        return get_providers_func(*args, **kwargs)
 
     def get_service(self, *args, **kwargs) -> list[ProviderBase]:
-        return self.get_providers(*args, **kwargs)  # type: ignore[attr-defined]
+        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        return get_providers_func(*args, **kwargs)
 
     def get_urls(self, *args, **kwargs) -> list[ProviderBase]:
-        return self.get_providers(*args, **kwargs)  # type: ignore[attr-defined]
+        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        return get_providers_func(*args, **kwargs)
 
     def get_costs(self, *args, **kwargs):
         costs = self.get_costs_services()
         return [{"service": key, "cost": value} for key, value in costs.items()]
 
-    def compile_providers(self, providers: list[ProviderBase], **kwargs) -> list[ProviderBase]:
-        providers = list(providers.values())
+    def compile_providers(self, providers: dict[str, ProviderBase] | list[ProviderBase], **kwargs) -> list[ProviderBase]:
+        if isinstance(providers, dict):
+            providers_list = list(providers.values())
+        else:
+            providers_list = providers
         attribute_search = kwargs.pop('attribute_search', {})
         if attribute_search:
-            providers = self.filter_providers(providers, attribute_search)
-        return self.sort_providers(providers, kwargs.get('order_by', ['name', 'priority']))
+            providers_list = self.filter_providers(providers_list, attribute_search)
+        return self.sort_providers(providers_list, kwargs.get('order_by', ['name', 'priority']))

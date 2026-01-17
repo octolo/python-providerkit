@@ -160,8 +160,8 @@ def load_providers_from_dir(
             provider_file = Path(inspect.getfile(provider_class)).resolve()
             relative_path = provider_file.relative_to(dir_path_obj)
             provider_instance = provider_class(path=str(relative_path))
-            provider_instance.class_name = provider_class.__name__  # type: ignore[attr-defined]
-            provider_instance.class_path = provider_class.__module__  # type: ignore[attr-defined]
+            setattr(provider_instance, 'class_name', provider_class.__name__)
+            setattr(provider_instance, 'class_path', provider_class.__module__)
             providers[name] = provider_instance
         except (TypeError, ValueError):
             continue

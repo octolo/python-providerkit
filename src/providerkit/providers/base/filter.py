@@ -15,18 +15,18 @@ class ProviderListFilter:
                         attr_value = attr_value()
                     except Exception:
                         attr_value = None
-                
+
                 if attr_value is None:
                     match = False
                     break
-                
+
                 attr_str = str(attr_value).lower()
                 filter_str = str(filter_value).lower()
                 if filter_str not in attr_str:
                     match = False
                     break
-            
+
             if match:
                 filtered.append(provider)
-        
+
         return filtered

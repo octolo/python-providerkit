@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, cast
 
 FIELDS_CONFIG_BASE = {
     'config_status_str': {
@@ -116,8 +116,8 @@ class ConfigMixin:
             return result
 
         if hasattr(self, '_config_keys_cache'):
-            cached: dict[str, bool] = self._config_keys_cache  # type: ignore[assignment]
-            return cached
+            cached = getattr(self, '_config_keys_cache', {})
+            return cast(dict[str, bool], cached)
 
         config_to_check = getattr(self, '_config', {})
         cached_result: dict[str, bool] = {}
