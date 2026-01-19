@@ -11,7 +11,7 @@ class ProviderListSort:
     ) -> tuple[tuple[int, Any], ...]:
         """Get sort key for a provider."""
         if order_by is None:
-            order_by = ['name', 'priority']
+            order_by = ['priority', 'name']
         key_parts: list[tuple[int, Any]] = []
         for attr_name in order_by:
             attr_value = getattr(provider, attr_name, None)

@@ -8,6 +8,7 @@ class ProviderListJson(ProviderListBase):
     name = 'json'
     display_name = 'JSON Providers'
     description = 'Get providers from a JSON file.'
+    priority = 2
 
     def get_providers(self, *_args, **kwargs) -> list[ProviderBase]:
         from providerkit.helpers import load_providers_from_json

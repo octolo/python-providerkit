@@ -91,4 +91,4 @@ class ProviderListBase(ProviderBase, ProviderListSort, ProviderListFilter, Provi
         attribute_search = kwargs.pop('attribute_search', {})
         if attribute_search:
             providers_list = self.filter_providers(providers_list, attribute_search)
-        return self.sort_providers(providers_list, kwargs.get('order_by', ['name', 'priority']))
+        return self.sort_providers(providers_list, kwargs.get('order_by', ['-priority', 'name']))

@@ -20,6 +20,7 @@ FIELDS_PROVIDER_BASE = {
         'format': 'str',
     },
     'description': {'label': 'Description', 'description': 'Provider description', 'format': 'str'},
+    'priority': {'label': 'Priority', 'description': 'Provider priority', 'format': 'int'},
 }
 
 

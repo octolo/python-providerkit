@@ -8,6 +8,7 @@ class ProviderListFolder(ProviderListBase):
     name = 'folder'
     display_name = 'Folder Providers'
     description = 'Get providers from a folder.'
+    priority = 1
 
     def get_providers(self, *_args, **kwargs) -> list[ProviderBase]:
         from providerkit.helpers import load_providers_from_dir

@@ -8,6 +8,7 @@ class ProviderListPackage(ProviderListBase):
     name = 'package'
     display_name = 'Package Providers'
     description = 'Get providers from a package.'
+    priority = 4
 
     def get_providers(self, *_args, **kwargs) -> list[ProviderBase]:
         from providerkit.helpers.load import load_providers_from_package
