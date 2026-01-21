@@ -188,7 +188,8 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
             if normalize_method and callable(normalize_method):
                 value = normalize_method(data)
             else:
-                value = self._normalize_recursive(data, field, cfg.get('source', field))
+                source = cfg.get('source', self.fields_associations.get(field, field))
+                value = self._normalize_recursive(data, field, source)
             if self.provider_key == 'key':
                 label = field
             else:

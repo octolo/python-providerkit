@@ -74,6 +74,11 @@ class ConfigMixin:
         if value is not None:
             return value
 
+        config_defaults = getattr(self, 'config_defaults', {})
+        if key in config_defaults:
+            return config_defaults[key]
+
+
         return default
 
     def configure(self, config: dict[str, Any], *, replace: bool = False) -> Any:
@@ -160,4 +165,5 @@ class ConfigMixin:
         missing_keys = self.get_missing_config_keys()
         if not missing_keys:
             return 'N/A'
-        return f'{len(missing_keys)}/{len(self.config_keys)}'
+        mk = len(self.config_keys) - len(missing_keys)
+        return f'{mk}/{len(self.config_keys)}'
