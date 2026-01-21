@@ -12,7 +12,7 @@ from qualitybase.services.utils import print_header, print_separator
 
 from providerkit.helpers import get_providerkit
 
-# Configuration des arguments pour le parser
+# Parser arguments configuration
 _PROVIDER_COMMAND_CONFIG = {
     'format': {'type': str, 'default': 'terminal'},
     'first': {'type': 'store_true'},

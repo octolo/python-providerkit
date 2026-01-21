@@ -46,3 +46,8 @@ class CostMixin:
         """Get costs for all services."""
         services = getattr(self, 'services', [])
         return {service: self.get_cost(service) for service in services}
+
+    @property
+    def costs_services(self) -> dict[str, Any]:
+        """Get costs for all services."""
+        return self.get_costs_services()
