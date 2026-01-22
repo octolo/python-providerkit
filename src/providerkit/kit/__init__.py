@@ -35,6 +35,8 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
     abstract: bool = False
     priority: int = 0  # 0 - highest, 5 - lowest
     provider_key: str = 'label'
+    fields_associations: dict = {}
+    fields_services: dict = {}
 
     def __init_subclass__(cls, **kwargs):
         """Automatically import required packages when subclass is defined."""
@@ -190,10 +192,7 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
             else:
                 source = cfg.get('source', self.fields_associations.get(field, field))
                 value = self._normalize_recursive(data, field, source)
-            if self.provider_key == 'key':
-                label = field
-            else:
-                label = cfg.get(self.provider_key, field)
+            label = field if self.provider_key == 'key' else cfg.get(self.provider_key, field)
             normalized[label] = value
         normalized = self.insert_data_normalized(data, normalized, config)
         return normalized

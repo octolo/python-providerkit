@@ -61,7 +61,7 @@ class PackageMixin:
         """Check installation status of all required packages."""
         if hasattr(self, '_packages_cache'):
             cached = getattr(self, '_packages_cache', {})
-            return cast(dict[str, bool], cached)
+            return cast('dict[str, bool]', cached)
 
         packages = self.get_required_packages()
         status: dict[str, bool] = {pkg: self.is_package_installed(pkg) for pkg in packages}

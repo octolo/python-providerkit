@@ -12,29 +12,29 @@ class ResponseMixin:
 
     def response(self, service_name: str, raw: bool = False, format: str | None = None) -> str:
         if raw:
-            get_result: Callable[[str], Any] = cast(Callable[[str], Any], getattr(self, 'get_service_result', lambda _: ''))
+            get_result: Callable[[str], Any] = cast('Callable[[str], Any]', getattr(self, 'get_service_result', lambda _: ''))
             result = get_result(service_name)
             return str(result)
         if format and hasattr(self, f'response_{format}'):
             return str(getattr(self, f'response_{format}')(service_name))
-        get_normalize: Callable[[str], Any] = cast(Callable[[str], Any], getattr(self, 'get_service_normalize', lambda _: ''))
+        get_normalize: Callable[[str], Any] = cast('Callable[[str], Any]', getattr(self, 'get_service_normalize', lambda _: ''))
         normalize = get_normalize(service_name)
         return str(normalize)
 
     def response_terminal(self, service_name: str) -> str:
         """Response in terminal."""
-        get_normalize: Callable[[str], Any] = cast(Callable[[str], Any], getattr(self, 'get_service_normalize', lambda _: {}))
+        get_normalize: Callable[[str], Any] = cast('Callable[[str], Any]', getattr(self, 'get_service_normalize', lambda _: {}))
         response: Any = get_normalize(service_name)
         return str(format_tabulate(response, empty_message='No data available.'))
 
     def response_json(self, service_name: str) -> str:
-        get_normalize: Callable[[str], Any] = cast(Callable[[str], Any], getattr(self, 'get_service_normalize', lambda _: {}))
+        get_normalize: Callable[[str], Any] = cast('Callable[[str], Any]', getattr(self, 'get_service_normalize', lambda _: {}))
         response: Any = get_normalize(service_name)
         return json.dumps(response, indent=2, ensure_ascii=False)
 
     def response_xml(self, service_name: str) -> str:
         """Convert response to XML format."""
-        get_normalize: Callable[[str], Any] = cast(Callable[[str], Any], getattr(self, 'get_service_normalize', lambda _: {}))
+        get_normalize: Callable[[str], Any] = cast('Callable[[str], Any]', getattr(self, 'get_service_normalize', lambda _: {}))
         response: Any = get_normalize(service_name)
 
         def sanitize_xml_name(name: str) -> str:
@@ -73,7 +73,7 @@ class ResponseMixin:
         """Convert response to CSV format."""
         import io
 
-        get_normalize: Callable[[str], Any] = cast(Callable[[str], Any], getattr(self, 'get_service_normalize', lambda _: {}))
+        get_normalize: Callable[[str], Any] = cast('Callable[[str], Any]', getattr(self, 'get_service_normalize', lambda _: {}))
         response: Any = get_normalize(service_name)
         output = io.StringIO()
         writer = csv.writer(output)

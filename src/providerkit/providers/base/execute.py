@@ -12,7 +12,7 @@ class ProviderListExecute:
     ) -> tuple[list[dict[str, Any]], str]:
         """Execute each provider."""
         lib_name = kwargs.get('lib_name', 'providerkit')
-        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        get_providers_func: Callable[..., list[ProviderBase]] = cast('Callable[..., list[ProviderBase]]', self.get_providers)  # type: ignore[attr-defined]
         providers = get_providers_func(lib_name=lib_name)
         if not providers:
             raise RuntimeError('No providers available')

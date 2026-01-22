@@ -37,10 +37,23 @@ class ServiceMixin:
         'get_services_authorized',
     ]
 
+    @classmethod
+    def _merge_services_fields(cls, services_fields: dict) -> None:
+        """Merge services_fields into services_cfg fields."""
+        services_cfg = getattr(cls, 'services_cfg', {})
+        for service_name, fields in services_fields.items():
+            if service_name in services_cfg:
+                if 'fields' not in services_cfg[service_name]:
+                    services_cfg[service_name]['fields'] = {}
+                services_cfg[service_name]['fields'].update(fields)
+
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         cls.current_service_name = None
         cls.services_cfg = copy.deepcopy(cls._default_services_cfg)
+        # Merge services_fields into services_cfg fields
+        services_fields = getattr(cls, 'services_fields', {})
+        cls._merge_services_fields(services_fields)
 
     def get_required_services(self) -> list[str]:
         """Get required service methods."""
@@ -55,7 +68,7 @@ class ServiceMixin:
         """Check implementation status of all required services."""
         if hasattr(self, '_services_cache'):
             cached = getattr(self, '_services_cache', {})
-            return cast(dict[str, bool], cached)
+            return cast('dict[str, bool]', cached)
 
         services = self.get_required_services()
         status: dict[str, bool] = {
@@ -118,9 +131,9 @@ class ServiceMixin:
 
     def get_services_authorized(self) -> list[str]:
         svc = list(self.services_authorized)
-        svc.extend(cast(list[str], getattr(self, 'package_authorized', [])))
-        svc.extend(cast(list[str], getattr(self, 'config_authorized', [])))
-        svc.extend(cast(list[str], getattr(self, 'urls_authorized', [])))
+        svc.extend(cast('list[str]', getattr(self, 'package_authorized', [])))
+        svc.extend(cast('list[str]', getattr(self, 'config_authorized', [])))
+        svc.extend(cast('list[str]', getattr(self, 'urls_authorized', [])))
         svc.extend(getattr(self, 'services_cfg', {}).keys())
         return svc
 
@@ -202,20 +215,20 @@ class ServiceMixin:
 
         config = kwargs.get('services_cfg') or getattr(self, 'services_cfg', {}).get(service_name, {})
         result = self.serialize_data(result, config)
-        setattr(self, 'current_service_name', None)
+        setattr(self, 'current_service_name', None)  # noqa: B010
         return result
 
     def serialize_data(self, result: Any, config: dict[str, Any], **_kwargs: Any) -> dict[str, Any] | list[dict[str, Any]]:
         from collections.abc import Callable
         normalize_func: Callable[[Any, dict[str, Any]], dict[str, Any]] = cast(
-            Callable[[Any, dict[str, Any]], dict[str, Any]],
+            'Callable[[Any, dict[str, Any]], dict[str, Any]]',
             getattr(self, 'normalize', lambda x, _: x)
         )
         if isinstance(result, list):
-            normalized = [cast(dict[str, Any], normalize_func(item, config)) for item in result]
+            normalized = [cast('dict[str, Any]', normalize_func(item, config)) for item in result]
             return normalized
         if isinstance(result, dict):
-            normalized_dict = cast(dict[str, Any], normalize_func(result, config))
+            normalized_dict = cast('dict[str, Any]', normalize_func(result, config))
             return normalized_dict
-        normalized_single = cast(dict[str, Any], normalize_func(result, config))
+        normalized_single = cast('dict[str, Any]', normalize_func(result, config))
         return normalized_single

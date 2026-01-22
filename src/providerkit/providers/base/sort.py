@@ -11,18 +11,18 @@ class _ReverseOrder:
 
     def __lt__(self, other: Any) -> bool:
         if isinstance(other, _ReverseOrder):
-            return self.value > other.value
-        return self.value > other
+            return bool(self.value > other.value)
+        return bool(self.value > other)
 
     def __gt__(self, other: Any) -> bool:
         if isinstance(other, _ReverseOrder):
-            return self.value < other.value
-        return self.value < other
+            return bool(self.value < other.value)
+        return bool(self.value < other)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, _ReverseOrder):
-            return self.value == other.value
-        return self.value == other
+            return bool(self.value == other.value)
+        return bool(self.value == other)
 
     def __le__(self, other: Any) -> bool:
         return self.__lt__(other) or self.__eq__(other)

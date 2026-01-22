@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
 import time
+from typing import Any
 
 from providerkit.kit import ProviderBase  # noqa: TC001
 from providerkit.providers import (
@@ -55,7 +55,6 @@ def call_providers(**kwargs: Any) -> list[dict[str, Any]]:
     pvs = get_providers(lib_name=lib_name, **kwargs)
     results = []
     for provider in pvs:
-        print(provider.priority, provider.name)
         start_time = time.time()
         result = {
             'name': provider.name,
@@ -70,7 +69,7 @@ def call_providers(**kwargs: Any) -> list[dict[str, Any]]:
             result['error'] = str(e)
             result['response_time'] = round(time.time() - start_time, 3)  # Time in seconds with 3 decimal places
             if not hasattr(provider, '_service_results_cache'):
-                provider._service_results_cache: dict[str, dict[str, Any]] = {}
+                provider._service_results_cache = {}
             if command not in provider._service_results_cache:
                 provider._service_results_cache[command] = {}
             provider._service_results_cache[command]['result'] = {'error': str(e)}

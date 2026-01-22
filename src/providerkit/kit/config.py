@@ -122,7 +122,7 @@ class ConfigMixin:
 
         if hasattr(self, '_config_keys_cache'):
             cached = getattr(self, '_config_keys_cache', {})
-            return cast(dict[str, bool], cached)
+            return cast('dict[str, bool]', cached)
 
         config_to_check = getattr(self, '_config', {})
         cached_result: dict[str, bool] = {}

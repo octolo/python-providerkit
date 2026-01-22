@@ -40,8 +40,9 @@ def load_providers_from_json(
             search_paths = [Path(p) if not isinstance(p, Path) else p for p in search_paths]
 
         for path_obj in search_paths:
-            if path_obj.exists():
-                json_file = path_obj
+            path_obj_path = Path(path_obj) if isinstance(path_obj, str) else path_obj
+            if path_obj_path.exists():
+                json_file = path_obj_path
                 break
         else:
             return {}
@@ -160,8 +161,8 @@ def load_providers_from_dir(
             provider_file = Path(inspect.getfile(provider_class)).resolve()
             relative_path = provider_file.relative_to(dir_path_obj)
             provider_instance = provider_class(path=str(relative_path))
-            setattr(provider_instance, 'class_name', provider_class.__name__)
-            setattr(provider_instance, 'class_path', provider_class.__module__)
+            setattr(provider_instance, 'class_name', provider_class.__name__)  # noqa: B010
+            setattr(provider_instance, 'class_path', provider_class.__module__)  # noqa: B010
             providers[name] = provider_instance
         except (TypeError, ValueError):
             continue

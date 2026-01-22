@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from typing import Any
+from typing import Any, cast
 
 from qualitybase.cli import _get_package_name as _get_package_name_from_context  # noqa: TID252
 from qualitybase.commands import parse_args_from_config
@@ -31,7 +31,8 @@ _ARG_CONFIG = {
 
 
 def _parse_all_args(args: list[str]) -> dict[str, Any]:
-    return parse_args_from_config(args, _ARG_CONFIG, prog='provider')
+    result = parse_args_from_config(args, _ARG_CONFIG, prog='provider')
+    return cast('dict[str, Any]', result)
 
 
 def _execute_command(
@@ -70,7 +71,7 @@ def _provider_command(args: list[str]) -> bool:
     output_format = parsed.get('format', 'terminal')
 
     command: str = 'get_providers'
-    additional_args: dict[str, str | bool] = {}
+    additional_args: dict[str, Any] = {}
 
     if 'command' in parsed:
         cmd_data = parsed['command']
@@ -114,7 +115,8 @@ def _provider_command(args: list[str]) -> bool:
                     'Invalid attribute format: positional arguments not allowed. Expected format: key=value', file=sys.stderr
                 )
                 return False
-            attribute_search = attr_data.get('kwargs', {})
+            kwargs_data = attr_data.get('kwargs', {})
+            attribute_search = cast('dict[str, str]', kwargs_data) if isinstance(kwargs_data, dict) else {}
             additional_args['attribute_search'] = attribute_search
 
     _execute_command(command, first, raw, output_format, additional_args,)

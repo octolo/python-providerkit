@@ -61,33 +61,34 @@ class ProviderListBase(ProviderBase, ProviderListSort, ProviderListFilter, Provi
     }
 
     def get_infos(self) -> dict[str, Any]:
-        return cast(dict[str, Any], self.__dict__)
+        return cast('dict[str, Any]', self.__dict__)
 
     def get_config(self, *args, **kwargs) -> list[ProviderBase]:
-        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        get_providers_func: Callable[..., list[ProviderBase]] = cast('Callable[..., list[ProviderBase]]', self.get_providers)  # type: ignore[attr-defined]
         return get_providers_func(*args, **kwargs)
 
     def get_package(self, *args, **kwargs) -> list[ProviderBase]:
-        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        get_providers_func: Callable[..., list[ProviderBase]] = cast('Callable[..., list[ProviderBase]]', self.get_providers)  # type: ignore[attr-defined]
         return get_providers_func(*args, **kwargs)
 
     def get_service(self, *args, **kwargs) -> list[ProviderBase]:
-        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        get_providers_func: Callable[..., list[ProviderBase]] = cast('Callable[..., list[ProviderBase]]', self.get_providers)  # type: ignore[attr-defined]
         return get_providers_func(*args, **kwargs)
 
     def get_urls(self, *args, **kwargs) -> list[ProviderBase]:
-        get_providers_func: Callable[..., list[ProviderBase]] = cast(Callable[..., list[ProviderBase]], getattr(self, 'get_providers'))
+        get_providers_func: Callable[..., list[ProviderBase]] = cast('Callable[..., list[ProviderBase]]', self.get_providers)  # type: ignore[attr-defined]
         return get_providers_func(*args, **kwargs)
 
-    def get_costs(self, *args, **kwargs):
+    def get_costs(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         costs = self.get_costs_services()
         return [{"service": key, "cost": value} for key, value in costs.items()]
 
     def compile_providers(self, providers: dict[str, ProviderBase] | list[ProviderBase], **kwargs) -> list[ProviderBase]:
-        if isinstance(providers, dict):
-            providers_list = list(providers.values())
-        else:
-            providers_list = providers
+        if kwargs.get('add_fields'):
+            services_cfg = getattr(self, 'services_cfg', {})
+            for service in services_cfg:
+                services_cfg[service]['fields'].update(kwargs.get('add_fields', {}))
+        providers_list = list(providers.values()) if isinstance(providers, dict) else providers
         attribute_search = kwargs.pop('attribute_search', {})
         if attribute_search:
             providers_list = self.filter_providers(providers_list, attribute_search)
