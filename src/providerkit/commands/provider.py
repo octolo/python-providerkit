@@ -20,7 +20,7 @@ _PROVIDER_COMMAND_CONFIG = {
     'filter': {'type': str},
     'backend': {'type': str},
     'attr': {'type': str, 'nargs': '*', 'default': []},
-}
+}   
 
 _ARG_CONFIG = {
     **_PROVIDER_COMMAND_CONFIG,
