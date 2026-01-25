@@ -196,3 +196,9 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
             normalized[label] = value
         normalized = self.insert_data_normalized(data, normalized, config)
         return normalized
+
+    def get_insert_normalized_backend(self, _data: Any, _normalized: dict[str, Any], _config: dict[str, Any]) -> str:
+        return self.name
+
+    def get_insert_normalized_backend_name(self, _data: Any, _normalized: dict[str, Any], _config: dict[str, Any]) -> str:
+        return self.display_name

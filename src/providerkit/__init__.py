@@ -15,6 +15,19 @@ from .kit.cost import CostMixin
 from .kit.package import PackageMixin
 from .kit.urls import UrlsMixin
 
+PROVIDERKIT_FIELDS_BACKEND = {
+    "backend": {
+        "label": "Backend display name",
+        "description": "Backend display name",
+        "format": "str",
+    },
+    "backend_name": {
+        "label": "Simple backend name (e.g., nominatim)",
+        "description": "Simple backend name (e.g., nominatim)",
+        "format": "str",
+    },
+}
+
 __all__ = [
     'ProviderBase',
     'ConfigMixin',
