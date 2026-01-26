@@ -5,7 +5,10 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 FIELDS_SERVICE_BASE = {
     'service_status_str': {
@@ -219,7 +222,6 @@ class ServiceMixin:
         return result
 
     def serialize_data(self, result: Any, config: dict[str, Any], **_kwargs: Any) -> dict[str, Any] | list[dict[str, Any]]:
-        from collections.abc import Callable
         normalize_func: Callable[[Any, dict[str, Any]], dict[str, Any]] = cast(
             'Callable[[Any, dict[str, Any]], dict[str, Any]]',
             getattr(self, 'normalize', lambda x, _: x)

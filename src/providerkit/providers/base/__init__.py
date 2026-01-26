@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from providerkit.kit import FIELDS_PROVIDER_BASE, ProviderBase
 from providerkit.kit.config import FIELDS_CONFIG_BASE
@@ -79,7 +81,7 @@ class ProviderListBase(ProviderBase, ProviderListSort, ProviderListFilter, Provi
         get_providers_func: Callable[..., list[ProviderBase]] = cast('Callable[..., list[ProviderBase]]', self.get_providers)  # type: ignore[attr-defined]
         return get_providers_func(*args, **kwargs)
 
-    def get_costs(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    def get_costs(self, *_args: Any, **_kwargs: Any) -> list[dict[str, Any]]:
         costs = self.get_costs_services()
         return [{"service": key, "cost": value} for key, value in costs.items()]
 

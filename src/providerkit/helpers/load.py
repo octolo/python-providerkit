@@ -97,7 +97,7 @@ def _load_providers_from_config(config: list[dict[str, Any]]) -> dict[str, Provi
     return providers
 
 
-def autodiscover_providers(
+def autodiscover_providers(  # noqa: C901
     dir_path: str | Path,
     *,
     base_module: str | None = None,

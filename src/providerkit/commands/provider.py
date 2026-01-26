@@ -20,7 +20,7 @@ _PROVIDER_COMMAND_CONFIG = {
     'filter': {'type': str},
     'backend': {'type': str},
     'attr': {'type': str, 'nargs': '*', 'default': []},
-}   
+}
 
 _ARG_CONFIG = {
     **_PROVIDER_COMMAND_CONFIG,
@@ -61,7 +61,7 @@ def _execute_command(
             print()
 
 
-def _provider_command(args: list[str]) -> bool:
+def _provider_command(args: list[str]) -> bool:  # noqa: C901
     """Execute provider command with parsed arguments."""
     parsed = _parse_all_args(args)
 

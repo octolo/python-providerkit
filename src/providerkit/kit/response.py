@@ -1,8 +1,10 @@
 import csv
 import json
 import xml.etree.ElementTree as ET
-from collections.abc import Callable
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from qualitybase.services.utils import format_tabulate
 

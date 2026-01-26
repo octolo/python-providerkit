@@ -1,7 +1,9 @@
-from collections.abc import Callable
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from providerkit.kit import ProviderBase
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from providerkit.kit import ProviderBase
 
 
 class ProviderListExecute:

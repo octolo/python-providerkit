@@ -65,7 +65,7 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
 
         self._service_results_cache: dict[str, dict[str, Any]] = {}
 
-    def _get_nested_value(
+    def _get_nested_value(  # noqa: C901
         self, data: dict[str, Any], path: str | list[str] | tuple[str, ...], default: Any = None
     ) -> Any:
         if isinstance(path, (list, tuple)):
@@ -97,7 +97,7 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
                 return default
         return val
 
-    def _normalize_recursive(
+    def _normalize_recursive(  # noqa: C901
         self,
         data: dict[str, Any] | Any,
         field: str,
