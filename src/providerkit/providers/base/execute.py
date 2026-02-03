@@ -53,5 +53,6 @@ class ProviderListExecute:
             'hash': self._get_hash_service_args(command, first, *args, **kwargs),
             'result': pv_executed,
             'last_provider': last_provider.name if last_provider else '',
+            'kwargs': kwargs,
         }
         return pv_executed, last_provider.name if last_provider else ''

@@ -160,17 +160,20 @@ class ServiceMixin:
         if service_name not in self.get_services_authorized():
             error_result = {'error': f"Service '{service_name}' do not appears in services list"}
             self._service_results_cache[service_name]['hash'] = service_args_hash
+            self._service_results_cache[service_name]['kwargs'] = kwargs
             self._service_results_cache[service_name]['result'] = error_result
             raise AttributeError(f"Service '{service_name}' do not appears in services list")
 
         if not self.is_service_implemented(service_name):
             error_result = {'error': f"Service '{service_name}' is not implemented"}
             self._service_results_cache[service_name]['hash'] = service_args_hash
+            self._service_results_cache[service_name]['kwargs'] = kwargs
             self._service_results_cache[service_name]['result'] = error_result
             raise AttributeError(f"Service '{service_name}' is not implemented")
 
         method = getattr(self, service_name)
         self._service_results_cache[service_name]['hash'] = service_args_hash
+        self._service_results_cache[service_name]['kwargs'] = kwargs
         try:
             result = method(*args, **kwargs)
             self._service_results_cache[service_name]['result'] = result
