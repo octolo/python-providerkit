@@ -47,6 +47,9 @@ def _extract_providers_from_module(
             and obj.__module__ == module_path
             and 'Provider' in name
         ):
+            # Skip abstract providers
+            if getattr(obj, 'abstract', False):
+                continue
             provider_name = getattr(obj, 'name', '').lower()
             if provider_name:
                 providers[provider_name] = obj

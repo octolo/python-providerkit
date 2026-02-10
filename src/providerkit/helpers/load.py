@@ -83,6 +83,10 @@ def _load_providers_from_config(config: list[dict[str, Any]]) -> dict[str, Provi
             if not issubclass(provider_class, ProviderBase):
                 continue
 
+            # Skip abstract providers
+            if getattr(provider_class, 'abstract', False):
+                continue
+
             config_dict = provider_config.get('config', {})
             provider_instance = provider_class(
                 config=config_dict, **provider_config.get('kwargs', {})
