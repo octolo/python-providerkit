@@ -28,6 +28,24 @@ PROVIDERKIT_FIELDS_BACKEND = {
     },
 }
 
+PROVIDERKIT_FIELDS_SERVICES = {
+    "name": {
+        "label": "Service name",
+        "description": "Service name",
+        "format": "str",
+    },
+    "fields": {
+        "label": "Service fields",
+        "description": "Service fields",
+        "format": "dict",
+    },
+    "description": {
+        "label": "Service description",
+        "description": "Service description",
+        "format": "str",
+    },
+}
+
 __all__ = [
     'ProviderBase',
     'ConfigMixin',

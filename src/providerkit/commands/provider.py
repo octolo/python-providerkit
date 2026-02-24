@@ -48,7 +48,7 @@ def _execute_command(
 
     if command in ['get_providers', 'get_config', 'get_package', 'get_service', 'get_urls']:
         pvk.call_service(command, lib_name=package_name, **additional_args)
-        print(pvk.response(command, raw, format=output_format))
+        print(pvk.response(command, raw, output_format=output_format))
     else:
         pvk.execute_providers(command, first, **additional_args)
 
@@ -57,7 +57,7 @@ def _execute_command(
             print_separator()
             print_header(provider.name)
             print_separator()
-            print(provider.response(command, raw, format=output_format))
+            print(provider.response(command, raw, output_format=output_format))
             print()
 
 

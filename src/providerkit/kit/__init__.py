@@ -195,6 +195,7 @@ class ProviderBase(PackageMixin, UrlsMixin, ConfigMixin, ServiceMixin, CostMixin
             label = field if self.provider_key == 'key' else cfg.get(self.provider_key, field)
             normalized[label] = value
         normalized = self.insert_data_normalized(data, normalized, config)
+        normalized["raw"] = data
         return normalized
 
     def get_insert_normalized_backend(self, _data: Any, _normalized: dict[str, Any], _config: dict[str, Any]) -> str:

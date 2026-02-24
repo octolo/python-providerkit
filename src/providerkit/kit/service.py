@@ -105,6 +105,12 @@ class ServiceMixin:
         """Get list of services."""
         return list(getattr(self, 'services_cfg', {}).keys())
 
+    def get_services(self) -> list[str]:
+        """Get list of services."""
+        return [
+            {"name": key, **value} for key, value in getattr(self, 'services_cfg', {}).items()
+        ]
+
     @property
     def service_status_str(self) -> str:
         if self.are_services_implemented():
@@ -181,6 +187,13 @@ class ServiceMixin:
         except Exception as e:
             self._service_results_cache[service_name]['error'] = str(e)
             raise e
+
+    def call_service_formatted(self, service_name: str, output_format: str = 'json', *args: Any, **kwargs: Any) -> Any:
+        """Call service method with formatting."""
+        result = self.call_service(service_name, *args, **kwargs)
+        if output_format == 'raw':
+            return result
+        return self.get_service_normalize(service_name)
 
     def clear_service_results_cache(self) -> None:
         """Clear cached service results."""

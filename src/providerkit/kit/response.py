@@ -12,13 +12,13 @@ from qualitybase.services.utils import format_tabulate
 class ResponseMixin:
     """Mixin for handling responses."""
 
-    def response(self, service_name: str, raw: bool = False, format: str | None = None) -> str:
+    def response(self, service_name: str, raw: bool = False, output_format: str | None = None) -> str:
         if raw:
             get_result: Callable[[str], Any] = cast('Callable[[str], Any]', getattr(self, 'get_service_result', lambda _: ''))
             result = get_result(service_name)
             return str(result)
-        if format and hasattr(self, f'response_{format}'):
-            return str(getattr(self, f'response_{format}')(service_name))
+        if output_format and hasattr(self, f'response_{output_format}'):
+            return str(getattr(self, f'response_{output_format}')(service_name))
         get_normalize: Callable[[str], Any] = cast('Callable[[str], Any]', getattr(self, 'get_service_normalize', lambda _: ''))
         normalize = get_normalize(service_name)
         return str(normalize)
