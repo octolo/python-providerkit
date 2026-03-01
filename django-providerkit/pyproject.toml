@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "django-providerkit"
+version = "0.1.0"
+description = "Django integration for ProviderKit. Provides Django admin integration and utilities for managing providers in Django applications."
+readme = "README.md"
+authors = [{ name = "Octolo", email = "dev@octolo.tech" }]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+keywords = [
+  "django",
+  "provider",
+  "service-provider",
+  "multi-provider",
+  "provider-management",
+  "django-admin",
+  "python",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Framework :: Django",
+  "Framework :: Django :: 3.2",
+  "Framework :: Django :: 4.0",
+  "Framework :: Django :: 4.1",
+  "Framework :: Django :: 4.2",
+  "Framework :: Django :: 5.0",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+dependencies = [
+    "Django>=3.2",
+    "django-boosted>=0.1.0",
+    "django-virtualqueryset>=0.1.0",
+    "providerkit>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/hicinformatic/python-providerkit"
+Repository = "https://github.com/hicinformatic/python-providerkit"
+Documentation = "https://github.com/hicinformatic/python-providerkit/django-providerkit#readme"
+Issues = "https://github.com/hicinformatic/python-providerkit/issues"
+
+[tool.setuptools]
+license-files = ["../LICENSE"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["django_providerkit*"]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.django-stubs]
+django_settings_module = "tests.settings"
+
+
