@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "providerkit"
+version = "1.0.0"
+description = "ProviderKit - Generic provider management library"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+  {name = "Octolo", email = "dev@octolo.tech"}
+]
+keywords = [
+  "provider",
+  "service-provider",
+  "multi-provider",
+  "provider-management",
+  "python",
+  "abstraction",
+  "service-abstraction",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+  "clicommands>=0.1.0",
+]
+
+[project.scripts]
+providerkit = "providerkit.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/octolo/python-providerkit"
+Repository = "https://github.com/octolo/python-providerkit"
+Documentation = "https://github.com/octolo/python-providerkit/tree/main/django-providerkit#readme"
+Issues = "https://github.com/octolo/python-providerkit/issues"
+
+[tool.setuptools]
+package-data = {providerkit = [".commands.json"]}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*", "docs*"]

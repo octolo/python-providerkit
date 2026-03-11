@@ -1,0 +1,145 @@
+"""Test configuration for alphabet providers.
+
+This test module loads providers from alphabet.json and tests the configuration.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from providerkit import load_providers_from_json
+
+ALPHABET_JSON = Path("tests/alphabet.json")
+
+
+def _get_alphabet_json_path() -> Path | None:
+    """Get path to alphabet.json configuration file."""
+    for path in [
+        Path(".alphabet.json"),
+        Path("alphabet.json"),
+        ALPHABET_JSON,
+        Path("tests/.alphabet.json"),
+    ]:
+        if path.exists():
+            return path
+    return None
+
+
+def test_alphabet_json_exists() -> None:
+    """Test that alphabet.json configuration file exists."""
+    json_path = _get_alphabet_json_path()
+    assert json_path is not None, "alphabet.json file not found in expected locations"
+    assert json_path.exists(), f"alphabet.json path {json_path} does not exist"
+
+
+def test_load_providers_from_json() -> None:
+    """Test loading providers from alphabet.json."""
+    providers = load_providers_from_json(lib_name="alphabet")
+
+    assert len(providers) > 0, "No providers loaded from alphabet.json"
+
+    expected_providers = [
+        "china_alphabet",
+        "japan_alphabet",
+        "france_alphabet",
+        "spain_alphabet",
+        "arabic_alphabet",
+        "swahili_alphabet",
+    ]
+
+    provider_names = list(providers.keys())
+    for expected_name in expected_providers:
+        assert expected_name in provider_names, f"Provider {expected_name} not found in loaded providers"
+
+
+def test_provider_configuration() -> None:
+    """Test that each provider has correct configuration."""
+    providers = load_providers_from_json(lib_name="alphabet")
+
+    china = providers.get("china_alphabet")
+    assert china is not None
+    assert set(china.config_keys) == {"CHINA_API_KEY", "CHINA_API_SECRET", "CHINA_ENCODING"}
+    assert china.config.get("CHINA_ENCODING") == "UTF-8"
+
+    japan = providers.get("japan_alphabet")
+    assert japan is not None
+    assert set(japan.config_keys) == {"JAPAN_API_KEY", "JAPAN_API_TOKEN", "JAPAN_CHARSET"}
+
+    france = providers.get("france_alphabet")
+    assert france is not None
+    assert set(france.config_keys) == {"FRANCE_API_KEY", "FRANCE_LOCALE", "FRANCE_DIACRITICS"}
+    assert france.config.get("FRANCE_LOCALE") == "fr_FR"
+
+    spain = providers.get("spain_alphabet")
+    assert spain is not None
+    assert set(spain.config_keys) == {"SPAIN_API_KEY", "SPAIN_REGION", "SPAIN_ENCODING"}
+
+    arabic = providers.get("arabic_alphabet")
+    assert arabic is not None
+    assert set(arabic.config_keys) == {"ARABIC_API_KEY", "ARABIC_DIRECTION", "ARABIC_SCRIPT"}
+    assert arabic.config.get("ARABIC_DIRECTION") == "rtl"
+
+    swahili = providers.get("swahili_alphabet")
+    assert swahili is not None
+    assert set(swahili.config_keys) == {"SWAHILI_API_KEY", "SWAHILI_COUNTRY", "SWAHILI_DIALECT"}
+    assert swahili.config.get("SWAHILI_COUNTRY") == "tanzania"
+
+
+def test_provider_urls() -> None:
+    """Test that each provider has URLs configured."""
+    providers = load_providers_from_json(lib_name="alphabet")
+
+    for name, provider in providers.items():
+        assert provider.site_url is not None, f"Provider {name} has no site_url"
+        assert provider.documentation_url is not None, f"Provider {name} has no documentation_url"
+        assert provider.status_url is not None, f"Provider {name} has no status_url"
+
+        if hasattr(provider, 'get_urls'):
+            urls = provider.get_urls()
+            assert "site" in urls
+            assert "documentation" in urls
+            assert "status" in urls
+
+
+def test_provider_required_packages() -> None:
+    """Test that each provider has required packages configured."""
+    providers = load_providers_from_json(lib_name="alphabet")
+
+    for name, provider in providers.items():
+        packages = provider.get_required_packages()
+        assert len(packages) > 0, f"Provider {name} has no required packages"
+        assert isinstance(packages, list), f"Provider {name} required_packages is not a list"
+
+
+def test_provider_services() -> None:
+    """Test that each provider has services configured and implemented."""
+    providers = load_providers_from_json(lib_name="alphabet")
+
+    for name, provider in providers.items():
+        services = provider.get_required_services()
+        assert len(services) > 0, f"Provider {name} has no services"
+        assert "get_alphabet" in services, f"Provider {name} does not have get_alphabet service"
+
+        assert provider.are_services_implemented(), f"Provider {name} services are not all implemented"
+        assert provider.is_service_implemented("get_alphabet"), f"Provider {name} get_alphabet service is not implemented"
+
+
+def test_provider_get_alphabet() -> None:
+    """Test that each provider can retrieve alphabet."""
+    providers = load_providers_from_json(lib_name="alphabet")
+
+    for name, provider in providers.items():
+        alphabet = provider.get_alphabet()
+        assert isinstance(alphabet, list), f"Provider {name} get_alphabet() does not return a list"
+        assert len(alphabet) > 0, f"Provider {name} get_alphabet() returns empty list"
+
+
+def test_provider_names_and_display_names() -> None:
+    """Test that providers have proper names and display names."""
+    providers = load_providers_from_json(lib_name="alphabet")
+
+    for name, provider in providers.items():
+        assert provider.name is not None and provider.name != "", f"Provider {name} has no name"
+        assert provider.display_name is not None and provider.display_name != "", f"Provider {name} has no display_name"
+        assert provider.name == name, f"Provider name mismatch: expected {name}, got {provider.name}"
+
