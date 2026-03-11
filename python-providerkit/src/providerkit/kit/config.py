@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from typing import Any, cast
 
 FIELDS_CONFIG_BASE = {
@@ -36,6 +37,17 @@ class ConfigMixin:
         'get_config_keys',
         'get_missing_config_keys',
     ]
+    _config_resolvers: list[Callable[[str, str], Any]] = []
+
+    @classmethod
+    def register_config_resolver(cls, resolver: Callable[[str, str], Any]) -> None:
+        """Register an external config resolver (e.g. Django settings).
+
+        The resolver receives (provider_name, key) and returns
+        the value or None if not found.
+        """
+        if resolver not in cls._config_resolvers:
+            cls._config_resolvers.append(resolver)
 
     def _init_config(self, config: dict[str, Any] | None = None) -> None:
         if not hasattr(self, '_config'):
@@ -56,16 +68,23 @@ class ConfigMixin:
         if value is not None:
             return value
 
-        provider_name = getattr(self, 'name', '').upper().replace('-', '_')
+        provider_name = getattr(self, 'name', '')
+
+        for resolver in self._config_resolvers:
+            value = resolver(provider_name, key)
+            if value is not None:
+                return value
+
+        provider_name_upper = provider_name.upper().replace('-', '_')
         key_upper = key.upper()
 
         if self.config_prefix:
-            env_key_with_prefix = f'{self.config_prefix}_{provider_name}_{key_upper}'
+            env_key_with_prefix = f'{self.config_prefix}_{provider_name_upper}_{key_upper}'
             value = os.getenv(env_key_with_prefix)
             if value is not None:
                 return value
 
-        env_key_provider = f'{provider_name}_{key_upper}'
+        env_key_provider = f'{provider_name_upper}_{key_upper}'
         value = os.getenv(env_key_provider)
         if value is not None:
             return value
@@ -77,7 +96,6 @@ class ConfigMixin:
         config_defaults = getattr(self, 'config_defaults', {})
         if key in config_defaults:
             return config_defaults[key]
-
 
         return default
 
