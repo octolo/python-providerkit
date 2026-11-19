@@ -67,7 +67,7 @@ class ProviderDescriptor:
         return ProviderValue(value, self.package_name)
 
     def __set__(self, instance, value):
-        if hasattr(value, '_value'):
+        if hasattr(value, "_value"):
             value = value._value
         instance.__dict__[self.field.attname] = value
 
@@ -127,5 +127,3 @@ class ProviderField(models.CharField):
             pass
 
         return choices
-
-

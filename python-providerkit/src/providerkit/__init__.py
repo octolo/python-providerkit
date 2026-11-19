@@ -49,14 +49,14 @@ PROVIDERKIT_FIELDS_SERVICES = {
 }
 
 __all__ = [
-    'ProviderBase',
-    'ConfigMixin',
-    'CostMixin',
-    'PackageMixin',
-    'UrlsMixin',
-    'autodiscover_providers',
-    'get_providers',
-    'load_providers_from_config',
-    'load_providers_from_json',
-    'main',
+    "ProviderBase",
+    "ConfigMixin",
+    "CostMixin",
+    "PackageMixin",
+    "UrlsMixin",
+    "autodiscover_providers",
+    "get_providers",
+    "load_providers_from_config",
+    "load_providers_from_json",
+    "main",
 ]

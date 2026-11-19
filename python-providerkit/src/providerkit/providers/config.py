@@ -5,15 +5,15 @@ from providerkit.providers.base import ProviderListBase
 
 
 class ProviderListConfig(ProviderListBase):
-    name = 'config'
-    display_name = 'Config Providers'
-    description = 'Get providers from a configuration.'
+    name = "config"
+    display_name = "Config Providers"
+    description = "Get providers from a configuration."
     priority = 3
 
     def get_providers(self, *_args, **kwargs) -> list[ProviderBase]:
         from providerkit.helpers import load_providers_from_config
 
-        config = kwargs.get('config')
+        config = kwargs.get("config")
 
         if config is None:
             return []

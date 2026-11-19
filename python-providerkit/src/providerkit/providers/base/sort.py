@@ -39,10 +39,10 @@ class ProviderListSort:
     ) -> tuple[tuple[int, Any], ...]:
         """Get sort key for a provider."""
         if order_by is None:
-            order_by = ['priority', 'name']
+            order_by = ["priority", "name"]
         key_parts: list[tuple[int, Any]] = []
         for attr_name in order_by:
-            reverse = attr_name.startswith('-')
+            reverse = attr_name.startswith("-")
             actual_attr_name = attr_name[1:] if reverse else attr_name
             attr_value = getattr(provider, actual_attr_name, None)
             if callable(attr_value):

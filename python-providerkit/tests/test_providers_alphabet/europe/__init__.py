@@ -1,2 +1,1 @@
 """European alphabet providers."""
-

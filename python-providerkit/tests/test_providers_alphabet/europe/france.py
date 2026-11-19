@@ -32,7 +32,22 @@ class FranceAlphabetProvider(AlphabetProvider):
             List of French alphabet characters including diacritics.
         """
         base = [chr(i) for i in range(ord("A"), ord("Z") + 1)]
-        diacritics = ["À", "Â", "Ä", "È", "É", "Ê", "Ë", "Î", "Ï", "Ô", "Ö", "Ù", "Û", "Ü", "Ÿ"]
+        diacritics = [
+            "À",
+            "Â",
+            "Ä",
+            "È",
+            "É",
+            "Ê",
+            "Ë",
+            "Î",
+            "Ï",
+            "Ô",
+            "Ö",
+            "Ù",
+            "Û",
+            "Ü",
+            "Ÿ",
+        ]
         lowercase = [c.lower() for c in base + diacritics]
         return sorted(set(base + diacritics + lowercase))
-

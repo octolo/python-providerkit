@@ -4,8 +4,8 @@ from .json import ProviderListJson
 from .package import ProviderListPackage
 
 __all__ = [
-    'ProviderListConfig',
-    'ProviderListFolder',
-    'ProviderListJson',
-    'ProviderListPackage',
+    "ProviderListConfig",
+    "ProviderListFolder",
+    "ProviderListJson",
+    "ProviderListPackage",
 ]

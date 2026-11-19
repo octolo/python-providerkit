@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 class BaseServiceAdminFilter(admin.SimpleListFilter):
     """Filter for base service model."""
+
     title = _("Base service")
     parameter_name = None
     field: str | None = None
@@ -20,18 +21,10 @@ class BaseServiceAdminFilter(admin.SimpleListFilter):
 
 class FirstServiceAdminFilter(BaseServiceAdminFilter):
     """Filter for first service model."""
+
     title = _("First")
     parameter_name = "first"
     field = "first"
-
-    def lookups(self, request, model_admin):  # noqa: ARG002
-        return (
-            ("1", _("Yes")),
-            ("0", _("No")),
-        )
-
-    def queryset(self, request, queryset):  # noqa: ARG002
-        return queryset
 
 
 class BackendServiceAdminFilter(BaseServiceAdminFilter):
@@ -48,4 +41,3 @@ class BackendServiceAdminFilter(BaseServiceAdminFilter):
     def queryset(self, request, queryset):  # noqa: ARG002
         queryset.backend = self.value()
         return queryset
-

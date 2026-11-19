@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-providerkit"
-version = "1.1.2"
+version = "1.1.3"
 description = "Django integration for ProviderKit. Provides Django admin integration and utilities for managing providers in Django applications."
 readme = "README.md"
 authors = [{ name = "Octolo", email = "dev@octolo.tech" }]
@@ -24,7 +24,7 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Framework :: Django",
-  "Framework :: Django :: 5.0",
+  "Framework :: Django :: 5.2",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -33,8 +33,9 @@ classifiers = [
   "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
 dependencies = [
-    "Django>=5.0,<6.0",
-    "django-boosted>=0.1.0",
+    "Django>=5.2.17,<6.0",
+    "clicommands>=0.1.0",
+    "django-boosted>=1.1.0",
     "django-virtualqueryset>=0.1.0",
     "providerkit>=1.1.1",
 ]
@@ -42,6 +43,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "pytest>=8",
+    "pytest-django>=4.11",
     "python-dotenv",
 ]
 

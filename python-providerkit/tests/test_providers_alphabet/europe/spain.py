@@ -36,4 +36,3 @@ class SpainAlphabetProvider(AlphabetProvider):
         diacritics = ["Á", "É", "Í", "Ó", "Ú", "Ü", "á", "é", "í", "ó", "ú", "ü"]
         lowercase = [c.lower() for c in base if c not in special]
         return sorted(set(base + special + diacritics + lowercase))
-

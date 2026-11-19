@@ -49,7 +49,9 @@ def test_load_providers_from_json() -> None:
 
     provider_names = list(providers.keys())
     for expected_name in expected_providers:
-        assert expected_name in provider_names, f"Provider {expected_name} not found in loaded providers"
+        assert expected_name in provider_names, (
+            f"Provider {expected_name} not found in loaded providers"
+        )
 
 
 def test_provider_configuration() -> None:
@@ -58,16 +60,28 @@ def test_provider_configuration() -> None:
 
     china = providers.get("china_alphabet")
     assert china is not None
-    assert set(china.config_keys) == {"CHINA_API_KEY", "CHINA_API_SECRET", "CHINA_ENCODING"}
+    assert set(china.config_keys) == {
+        "CHINA_API_KEY",
+        "CHINA_API_SECRET",
+        "CHINA_ENCODING",
+    }
     assert china.config.get("CHINA_ENCODING") == "UTF-8"
 
     japan = providers.get("japan_alphabet")
     assert japan is not None
-    assert set(japan.config_keys) == {"JAPAN_API_KEY", "JAPAN_API_TOKEN", "JAPAN_CHARSET"}
+    assert set(japan.config_keys) == {
+        "JAPAN_API_KEY",
+        "JAPAN_API_TOKEN",
+        "JAPAN_CHARSET",
+    }
 
     france = providers.get("france_alphabet")
     assert france is not None
-    assert set(france.config_keys) == {"FRANCE_API_KEY", "FRANCE_LOCALE", "FRANCE_DIACRITICS"}
+    assert set(france.config_keys) == {
+        "FRANCE_API_KEY",
+        "FRANCE_LOCALE",
+        "FRANCE_DIACRITICS",
+    }
     assert france.config.get("FRANCE_LOCALE") == "fr_FR"
 
     spain = providers.get("spain_alphabet")
@@ -76,12 +90,20 @@ def test_provider_configuration() -> None:
 
     arabic = providers.get("arabic_alphabet")
     assert arabic is not None
-    assert set(arabic.config_keys) == {"ARABIC_API_KEY", "ARABIC_DIRECTION", "ARABIC_SCRIPT"}
+    assert set(arabic.config_keys) == {
+        "ARABIC_API_KEY",
+        "ARABIC_DIRECTION",
+        "ARABIC_SCRIPT",
+    }
     assert arabic.config.get("ARABIC_DIRECTION") == "rtl"
 
     swahili = providers.get("swahili_alphabet")
     assert swahili is not None
-    assert set(swahili.config_keys) == {"SWAHILI_API_KEY", "SWAHILI_COUNTRY", "SWAHILI_DIALECT"}
+    assert set(swahili.config_keys) == {
+        "SWAHILI_API_KEY",
+        "SWAHILI_COUNTRY",
+        "SWAHILI_DIALECT",
+    }
     assert swahili.config.get("SWAHILI_COUNTRY") == "tanzania"
 
 
@@ -91,10 +113,12 @@ def test_provider_urls() -> None:
 
     for name, provider in providers.items():
         assert provider.site_url is not None, f"Provider {name} has no site_url"
-        assert provider.documentation_url is not None, f"Provider {name} has no documentation_url"
+        assert provider.documentation_url is not None, (
+            f"Provider {name} has no documentation_url"
+        )
         assert provider.status_url is not None, f"Provider {name} has no status_url"
 
-        if hasattr(provider, 'get_urls'):
+        if hasattr(provider, "get_urls"):
             urls = provider.get_urls()
             assert "site" in urls
             assert "documentation" in urls
@@ -108,7 +132,9 @@ def test_provider_required_packages() -> None:
     for name, provider in providers.items():
         packages = provider.get_required_packages()
         assert len(packages) > 0, f"Provider {name} has no required packages"
-        assert isinstance(packages, list), f"Provider {name} required_packages is not a list"
+        assert isinstance(packages, list), (
+            f"Provider {name} required_packages is not a list"
+        )
 
 
 def test_provider_services() -> None:
@@ -118,10 +144,16 @@ def test_provider_services() -> None:
     for name, provider in providers.items():
         services = provider.get_required_services()
         assert len(services) > 0, f"Provider {name} has no services"
-        assert "get_alphabet" in services, f"Provider {name} does not have get_alphabet service"
+        assert "get_alphabet" in services, (
+            f"Provider {name} does not have get_alphabet service"
+        )
 
-        assert provider.are_services_implemented(), f"Provider {name} services are not all implemented"
-        assert provider.is_service_implemented("get_alphabet"), f"Provider {name} get_alphabet service is not implemented"
+        assert provider.are_services_implemented(), (
+            f"Provider {name} services are not all implemented"
+        )
+        assert provider.is_service_implemented("get_alphabet"), (
+            f"Provider {name} get_alphabet service is not implemented"
+        )
 
 
 def test_provider_get_alphabet() -> None:
@@ -130,7 +162,9 @@ def test_provider_get_alphabet() -> None:
 
     for name, provider in providers.items():
         alphabet = provider.get_alphabet()
-        assert isinstance(alphabet, list), f"Provider {name} get_alphabet() does not return a list"
+        assert isinstance(alphabet, list), (
+            f"Provider {name} get_alphabet() does not return a list"
+        )
         assert len(alphabet) > 0, f"Provider {name} get_alphabet() returns empty list"
 
 
@@ -139,7 +173,12 @@ def test_provider_names_and_display_names() -> None:
     providers = load_providers_from_json(lib_name="alphabet")
 
     for name, provider in providers.items():
-        assert provider.name is not None and provider.name != "", f"Provider {name} has no name"
-        assert provider.display_name is not None and provider.display_name != "", f"Provider {name} has no display_name"
-        assert provider.name == name, f"Provider name mismatch: expected {name}, got {provider.name}"
-
+        assert provider.name is not None and provider.name != "", (
+            f"Provider {name} has no name"
+        )
+        assert provider.display_name is not None and provider.display_name != "", (
+            f"Provider {name} has no display_name"
+        )
+        assert provider.name == name, (
+            f"Provider name mismatch: expected {name}, got {provider.name}"
+        )

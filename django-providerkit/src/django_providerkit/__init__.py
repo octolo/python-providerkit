@@ -10,21 +10,21 @@ __version__ = version("django-providerkit")
 
 
 fields_associations = {
-    'int': models.IntegerField,
-    'float': models.FloatField,
-    'bool': models.BooleanField,
-    'list': models.JSONField,
-    'str': models.CharField,
-    'text': models.TextField,
-    'date': models.DateField,
-    'time': models.TimeField,
-    'datetime': models.DateTimeField,
-    'email': models.EmailField,
-    'url': models.URLField,
-    'json': models.JSONField,
-    'dict': models.JSONField,
+    "int": models.IntegerField,
+    "float": models.FloatField,
+    "bool": models.BooleanField,
+    "list": models.JSONField,
+    "str": models.CharField,
+    "text": models.TextField,
+    "date": models.DateField,
+    "time": models.TimeField,
+    "datetime": models.DateTimeField,
+    "email": models.EmailField,
+    "url": models.URLField,
+    "json": models.JSONField,
+    "dict": models.JSONField,
 }
 
 from .fields import ProviderField
 
-__all__ = ['ProviderField']
+__all__ = ["ProviderField"]

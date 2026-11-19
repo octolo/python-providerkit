@@ -8,25 +8,25 @@ import sys
 from typing import Any, cast
 
 FIELDS_PACKAGE_BASE = {
-    'package_status_str': {
-        'label': 'Package status',
-        'description': 'Package status',
-        'format': 'str',
+    "package_status_str": {
+        "label": "Package status",
+        "description": "Package status",
+        "format": "str",
     },
-    'required_packages': {
-        'label': 'Required packages',
-        'description': 'Required packages',
-        'format': 'list',
+    "required_packages": {
+        "label": "Required packages",
+        "description": "Required packages",
+        "format": "list",
     },
-    'missing_packages': {
-        'label': 'Missing packages',
-        'description': 'Missing packages',
-        'format': 'list',
+    "missing_packages": {
+        "label": "Missing packages",
+        "description": "Missing packages",
+        "format": "list",
     },
-    'are_packages_installed': {
-        'label': 'Are packages installed',
-        'description': 'Are packages installed',
-        'format': 'bool',
+    "are_packages_installed": {
+        "label": "Are packages installed",
+        "description": "Are packages installed",
+        "format": "bool",
     },
 }
 
@@ -36,18 +36,18 @@ class PackageMixin:
 
     required_packages: list[str] = []
     package_authorized: list[str] = [
-        'check_packages',
-        'get_required_packages',
-        'get_missing_packages',
+        "check_packages",
+        "get_required_packages",
+        "get_missing_packages",
     ]
 
     def get_required_packages(self) -> list[str]:
         """Get required packages."""
-        return getattr(self, 'required_packages', [])
+        return getattr(self, "required_packages", [])
 
     def is_package_installed(self, package_name: str) -> bool:
         """Check if package is installed."""
-        normalized_name = package_name.replace('-', '_').replace('.', '_')
+        normalized_name = package_name.replace("-", "_").replace(".", "_")
 
         try:
             spec = importlib.util.find_spec(normalized_name)
@@ -59,19 +59,21 @@ class PackageMixin:
 
     def check_packages(self) -> dict[str, bool]:
         """Check installation status of all required packages."""
-        if hasattr(self, '_packages_cache'):
-            cached = getattr(self, '_packages_cache', {})
-            return cast('dict[str, bool]', cached)
+        if hasattr(self, "_packages_cache"):
+            cached = getattr(self, "_packages_cache", {})
+            return cast("dict[str, bool]", cached)
 
         packages = self.get_required_packages()
-        status: dict[str, bool] = {pkg: self.is_package_installed(pkg) for pkg in packages}
+        status: dict[str, bool] = {
+            pkg: self.is_package_installed(pkg) for pkg in packages
+        }
         self._packages_cache = status
         return status
 
     def clear_packages_cache(self) -> None:
         """Clear cached package check results."""
-        if hasattr(self, '_packages_cache'):
-            delattr(self, '_packages_cache')
+        if hasattr(self, "_packages_cache"):
+            delattr(self, "_packages_cache")
 
     def are_packages_installed(self) -> bool:
         """Check if all required packages are installed."""
@@ -93,7 +95,7 @@ class PackageMixin:
         cls, package_name: str, globals_dict: dict[str, Any] | None = None
     ) -> None:
         """Import a single package with normalized name fallback."""
-        normalized_name = package_name.replace('-', '_').replace('.', '_')
+        normalized_name = package_name.replace("-", "_").replace(".", "_")
 
         try:
             module = importlib.import_module(normalized_name)  # nosec B307
@@ -129,12 +131,14 @@ class PackageMixin:
     def package_status_str(self) -> str:
         """Get status of packages."""
         if self.are_packages_installed():
-            return '✓'
+            return "✓"
         packages = self.get_required_packages()
         if not packages:
-            return 'N/A'
-        installed_count = sum(1 for package in packages if self.is_package_installed(package))
+            return "N/A"
+        installed_count = sum(
+            1 for package in packages if self.is_package_installed(package)
+        )
         total_count = len(packages)
         if installed_count == total_count:
-            return '✓'
-        return f'{installed_count}/{total_count}'
+            return "✓"
+        return f"{installed_count}/{total_count}"

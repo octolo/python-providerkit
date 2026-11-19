@@ -1,2 +1,1 @@
 """Asian alphabet providers."""
-

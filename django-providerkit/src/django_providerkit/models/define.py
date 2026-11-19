@@ -57,8 +57,8 @@ def build_model_field(cfg: dict, *, primary_key: bool = False):
 def create_service_provider_model(name, fields, app_label, field_id):
     """Create a service provider model."""
     attrs = {
-        '__module__': __name__,
-        'Meta': type('Meta', (), {'app_label': app_label}),
+        "__module__": __name__,
+        "Meta": type("Meta", (), {"app_label": app_label}),
     }
 
     fields_to_add = {
@@ -67,13 +67,14 @@ def create_service_provider_model(name, fields, app_label, field_id):
     }
 
     attrs.update(fields_to_add)
-    model_name = snake_to_camel(name) + 'ServiceProviderModel'
+    model_name = snake_to_camel(name) + "ServiceProviderModel"
 
     return type(model_name, (ServiceProviderModel,), attrs)
 
 
 def define_provider_fields(primary_key="id", add_fields=None):
     """Decorator to automatically add provider fields to a model."""
+
     def decorator(cls):
         for field, value in FIELDS_PROVIDERKIT.items():
             if field == primary_key:
@@ -84,7 +85,7 @@ def define_provider_fields(primary_key="id", add_fields=None):
         @property
         def _provider(self):
             """Get the original provider from the manager."""
-            if hasattr(self.__class__.objects, '_providers_by_name'):
+            if hasattr(self.__class__.objects, "_providers_by_name"):
                 return self.__class__.objects._providers_by_name.get(self.name)
             return None
 
@@ -94,7 +95,7 @@ def define_provider_fields(primary_key="id", add_fields=None):
         def costs_services(self):
             """Get costs for all services."""
             provider = self._provider if self._provider else self
-            if hasattr(provider, 'get_costs_services'):
+            if hasattr(provider, "get_costs_services"):
                 return provider.get_costs_services()
             return {}
 
@@ -106,7 +107,9 @@ def define_provider_fields(primary_key="id", add_fields=None):
                 cls.add_to_class(field, db_field)
 
         return cls
+
     return decorator
+
 
 class ServiceProperty:
     """Property descriptor with admin attributes."""
@@ -124,23 +127,27 @@ class ServiceProperty:
 
 def define_service_fields(services: list[str]):
     """Decorator to automatically add service fields to a model."""
+
     def decorator(cls):
         fields_service = []
         fields_cost = []
         for service in services:
+
             def make_has_service(svc: str):
                 def has_service(self):
                     provider = self._provider if self._provider else self
                     return hasattr(provider, svc) and callable(getattr(provider, svc))
 
-                return ServiceProperty(has_service, format_lazy(_("Has {}"), svc), boolean=True)
+                return ServiceProperty(
+                    has_service, format_lazy(_("Has {}"), svc), boolean=True
+                )
 
             def make_cost_service(svc: str):
                 def cost_service(self):
                     provider = self._provider if self._provider else self
-                    if hasattr(provider, 'get_cost'):
+                    if hasattr(provider, "get_cost"):
                         cost = provider.get_cost(svc)
-                        if cost in (None, 0, 'free'):
+                        if cost in (None, 0, "free"):
                             return "-"
                         return f"${cost:.5f}"
                     return "-"
@@ -156,11 +163,13 @@ def define_service_fields(services: list[str]):
         cls.add_to_class("has_service_fields", fields_service)
         cls.add_to_class("cost_service_fields", fields_cost)
         return cls
+
     return decorator
 
 
 def define_fields_from_config(fields_config: dict, primary_key: str | None = None):
     """Decorator to automatically add fields to a model from a fields configuration."""
+
     def decorator(cls):
         for field, value in fields_config.items():
             if field == primary_key:
@@ -170,4 +179,5 @@ def define_fields_from_config(fields_config: dict, primary_key: str | None = Non
             cls.add_to_class(field, db_field)
 
         return cls
+
     return decorator

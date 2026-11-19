@@ -7,11 +7,11 @@ from virtualqueryset.managers import VirtualManager
 class BaseProviderManager(VirtualManager):
     """Base manager for provider models."""
 
-    package_name = 'providerkit'
+    package_name = "providerkit"
     _providers_by_name = {}  # Cache providers by name
 
     def __init__(self, *args, **kwargs):
-        self.package_name = kwargs.pop('package_name', 'providerkit')
+        self.package_name = kwargs.pop("package_name", "providerkit")
         super().__init__(*args, **kwargs)
 
     def get_data(self) -> list[Any]:
@@ -30,6 +30,7 @@ class BaseProviderManager(VirtualManager):
             self._providers_by_name[provider.name] = provider
 
         return list(providers)
+
 
 class BaseServiceProviderManager(VirtualManager):
     _commands = {}
@@ -62,10 +63,10 @@ class BaseServiceProviderManager(VirtualManager):
     def get_command_data_list(self, results: Any, command: str) -> list[Any]:
         data_list = []
         for result in results:
-            if isinstance(result, dict) and 'provider' in result:
+            if isinstance(result, dict) and "provider" in result:
                 if "error" in result:
                     continue
-                provider_obj = result['provider']
+                provider_obj = result["provider"]
                 normalize_data = provider_obj.get_service_normalize(command)  # type: ignore[attr-defined]
                 if isinstance(normalize_data, list):
                     data_list.extend(normalize_data)
@@ -103,4 +104,3 @@ class BaseServiceProviderManager(VirtualManager):
         if self.backend:
             kwargs["attribute_search"] = {"name": self.backend}
         return self.get_queryset_command(command, **kwargs)
-

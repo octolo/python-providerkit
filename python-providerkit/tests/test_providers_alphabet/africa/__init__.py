@@ -1,2 +1,1 @@
 """African alphabet providers."""
-

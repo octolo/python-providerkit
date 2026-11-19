@@ -2,14 +2,15 @@ from virtualqueryset.managers import VirtualManager
 from providerkit.helpers import get_providerkit
 from typing import Any
 
+
 class ProviderServiceManager(VirtualManager):
     """Base manager for provider service models."""
 
-    package_name = 'providerkit'
+    package_name = "providerkit"
     _services_by_name = {}  # Cache services by name
 
     def __init__(self, *args, **kwargs):
-        self.package_name = kwargs.pop('package_name', 'providerkit')
+        self.package_name = kwargs.pop("package_name", "providerkit")
         super().__init__(*args, **kwargs)
 
     def get_data(self) -> list[Any]:

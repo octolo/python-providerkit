@@ -18,12 +18,10 @@ jobs:
       matrix:
         package_name: ["providerkit", "django-providerkit"]
         python_version: ["3.10", "3.11", "3.12"]
-        django_version: ["", "5.0.*", "5.1.*", "5.2.*"]
+        django_version: ["", "5.2.17", "5.2.*"]
         exclude:
           - package_name: providerkit
-            django_version: "5.0.*"
-          - package_name: providerkit
-            django_version: "5.1.*"
+            django_version: "5.2.17"
           - package_name: providerkit
             django_version: "5.2.*"
           - package_name: django-providerkit
@@ -34,7 +32,7 @@ jobs:
             test_command: python -m pytest
           - package_name: django-providerkit
             working_directory: django-providerkit
-            test_command: python manage.py test
+            test_command: python -m pytest
 
     steps:
       - name: Checkout repository
@@ -70,9 +68,93 @@ jobs:
         working-directory: ${{ matrix.working_directory }}
         run: ${{ matrix.test_command }}
 
+  ruff:
+    name: Ruff
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the pinned Ruff profile
+        run: python -m pip install ruff==0.17.5
+
+      - name: Check the explicit lint profile
+        run: ruff check .
+
+      - name: Check formatting
+        run: ruff format --check .
+
+  django-advisories:
+    name: Audit Django floor and latest 5.2
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Audit the declared floor and the latest 5.2 patch
+        working-directory: django-providerkit
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          audit_dir="$(mktemp -d)"
+          python - "$audit_dir" <<'PY'
+          import sys
+          from pathlib import Path
+
+          import tomllib
+          from packaging.requirements import Requirement
+
+          audit_dir = Path(sys.argv[1])
+          data = tomllib.loads(Path("pyproject.toml").read_text())
+          dependency = next(
+              item
+              for item in data["project"]["dependencies"]
+              if item.lower().startswith("django")
+          )
+          requirement = Requirement(dependency)
+          floors = [
+              specifier.version
+              for specifier in requirement.specifier
+              if specifier.operator == ">="
+          ]
+          if len(floors) != 1 or floors[0].count(".") != 2:
+              sys.exit(f"Django dependency must set a patched floor, got {dependency}")
+          floor = floors[0]
+          (audit_dir / "django-floor.txt").write_text(f"Django=={floor}\n")
+          print(f"Declared floor: Django=={floor}")
+          PY
+          python -m pip_audit -r "$audit_dir/django-floor.txt" --no-deps -s pypi --progress-spinner off
+          python -m pip_audit -r "$audit_dir/django-floor.txt" --no-deps -s osv --progress-spinner off
+          python -m pip install "Django==5.2.*"
+          python - "$audit_dir" <<'PY'
+          import sys
+          from pathlib import Path
+
+          import django
+
+          version = django.get_version()
+          (Path(sys.argv[1]) / "django-latest.txt").write_text(f"Django=={version}\n")
+          print(f"Latest 5.2 patch: Django=={version}")
+          PY
+          python -m pip_audit -r "$audit_dir/django-latest.txt" --no-deps -s pypi --progress-spinner off
+          python -m pip_audit -r "$audit_dir/django-latest.txt" --no-deps -s osv --progress-spinner off
+
   build:
     name: Build ${{ matrix.package_name }}
-    needs: tests
+    needs: [tests, django-advisories]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -105,3 +187,39 @@ jobs:
           python -m pip install build twine
           python -m build
           python -m twine check dist/*
+          python ../scripts/check_distribution_license.py dist
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.package_name }}-distributions
+          path: ${{ matrix.working_directory }}/dist/
+          if-no-files-found: error
+
+  install-wheels:
+    name: Install both wheels outside the checkout
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download the built distributions
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-distributions"
+          path: built-distributions
+          merge-multiple: true
+
+      - name: Check the license of the downloaded distributions
+        run: python scripts/check_distribution_license.py built-distributions
+
+      - name: Install both wheels in a clean environment
+        run: python scripts/install_built_wheels.py built-distributions

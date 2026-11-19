@@ -23,15 +23,22 @@ def _build_module_path(
         relative_path = abs_file.relative_to(abs_dir)
 
     module_parts = list(relative_path.parts[:-1]) + [py_file.stem]
-    return f'{base_module}.{".".join(module_parts)}'
+    return f"{base_module}.{'.'.join(module_parts)}"
 
 
-def _get_module_path_from_file(py_file: Path) -> str | None:
+def _load_module_from_file(py_file: Path) -> Any | None:
     spec = importlib.util.spec_from_file_location(py_file.stem, py_file)
     if spec is None or spec.loader is None:
         return None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    return module
+
+
+def _get_module_path_from_file(py_file: Path) -> str | None:
+    module = _load_module_from_file(py_file)
+    if module is None:
+        return None
     return module.__name__
 
 
@@ -45,12 +52,12 @@ def _extract_providers_from_module(
             obj is not ProviderBase
             and issubclass(obj, ProviderBase)
             and obj.__module__ == module_path
-            and 'Provider' in name
+            and "Provider" in name
         ):
             # Skip abstract providers
             if obj.__dict__.get("abstract", False):
                 continue
-            provider_name = getattr(obj, 'name', '').lower()
+            provider_name = getattr(obj, "name", "").lower()
             if provider_name:
                 providers[provider_name] = obj
     return providers
@@ -61,7 +68,7 @@ def _infer_base_module(dir_path_obj: Path) -> str | None:
         cwd = Path.cwd()
         try:
             relative_path = dir_path_obj.relative_to(cwd)
-            return str(relative_path).replace('/', '.').replace('\\', '.')
+            return str(relative_path).replace("/", ".").replace("\\", ".")
         except ValueError:
             return None
-    return str(dir_path_obj).replace('/', '.').replace('\\', '.')
+    return str(dir_path_obj).replace("/", ".").replace("\\", ".")

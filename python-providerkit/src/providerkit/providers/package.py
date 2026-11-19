@@ -5,15 +5,15 @@ from providerkit.providers.base import ProviderListBase
 
 
 class ProviderListPackage(ProviderListBase):
-    name = 'package'
-    display_name = 'Package Providers'
-    description = 'Get providers from a package.'
+    name = "package"
+    display_name = "Package Providers"
+    description = "Get providers from a package."
     priority = 4
 
     def get_providers(self, *_args, **kwargs) -> list[ProviderBase]:
         from providerkit.helpers.load import load_providers_from_package
 
-        lib_name = kwargs.pop('lib_name', 'providerkit')
+        lib_name = kwargs.pop("lib_name", "providerkit")
         if lib_name is None:
             return []
         providers_result = load_providers_from_package(lib_name)
@@ -21,4 +21,3 @@ class ProviderListPackage(ProviderListBase):
             return []
 
         return self.compile_providers(providers_result, **kwargs)
-

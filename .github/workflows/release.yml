@@ -7,8 +7,47 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    name: Test the tagged commit
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify the tag matches both packages
+        env:
+          TAG_VERSION: ${{ github.ref_name }}
+        run: |
+          python -m pip install --upgrade pip packaging
+          python scripts/check_release_tag.py
+
+      - name: Test providerkit
+        working-directory: python-providerkit
+        run: |
+          python -m pip install -e ".[test]"
+          python -m pytest
+
+      - name: Test django-providerkit
+        working-directory: django-providerkit
+        run: |
+          python -m pip install -e ".[test]"
+          python -m pip install -e ../python-providerkit
+          python -m pip install "Django==5.2.17"
+          python manage.py check
+          python -m pytest
+
   build:
     name: Build ${{ matrix.package_name }}
+    needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -20,10 +59,8 @@ jobs:
         include:
           - package_name: providerkit
             working_directory: python-providerkit
-            packages_dir: python-providerkit/dist/
           - package_name: django-providerkit
             working_directory: django-providerkit
-            packages_dir: django-providerkit/dist/
 
     steps:
       - name: Checkout repository
@@ -45,17 +82,48 @@ jobs:
           python -m pip install build twine
           python -m build
           python -m twine check dist/*
+          python ../scripts/check_distribution_license.py dist
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.package_name }}-distributions
-          path: ${{ matrix.packages_dir }}
+          path: ${{ matrix.working_directory }}/dist/
           if-no-files-found: error
+
+  install-wheels:
+    name: Install both wheels outside the checkout
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download the distributions that will be published
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-distributions"
+          path: built-distributions
+          merge-multiple: true
+
+      - name: Check the license of the downloaded distributions
+        run: python scripts/check_distribution_license.py built-distributions
+
+      - name: Install both wheels in a clean environment
+        run: python scripts/install_built_wheels.py built-distributions
 
   publish:
     name: Publish ${{ matrix.package_name }} to ${{ matrix.repository }}
-    needs: build
+    needs: install-wheels
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:

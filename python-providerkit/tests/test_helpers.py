@@ -9,8 +9,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from providerkit import (
     autodiscover_providers,
     get_providers,
@@ -38,7 +36,14 @@ def test_load_providers_from_json_with_explicit_path() -> None:
     providers = load_providers_from_json(json_path=json_path)
 
     assert len(providers) == 6
-    for name in ["china_alphabet", "japan_alphabet", "france_alphabet", "spain_alphabet", "arabic_alphabet", "swahili_alphabet"]:
+    for name in [
+        "china_alphabet",
+        "japan_alphabet",
+        "france_alphabet",
+        "spain_alphabet",
+        "arabic_alphabet",
+        "swahili_alphabet",
+    ]:
         assert name in providers
 
 
@@ -217,7 +222,14 @@ def test_get_providers_with_dir_path() -> None:
 
     assert len(providers) == 6
     provider_names = [p.name for p in providers]
-    for provider_name in ["china_alphabet", "japan_alphabet", "france_alphabet", "spain_alphabet", "arabic_alphabet", "swahili_alphabet"]:
+    for provider_name in [
+        "china_alphabet",
+        "japan_alphabet",
+        "france_alphabet",
+        "spain_alphabet",
+        "arabic_alphabet",
+        "swahili_alphabet",
+    ]:
         assert provider_name in provider_names
 
 
@@ -275,7 +287,9 @@ def test_all_providers_inherit_from_provider_base() -> None:
     providers = load_providers_from_json(lib_name="alphabet")
 
     for name, provider in providers.items():
-        assert isinstance(provider, ProviderBase), f"Provider {name} does not inherit from ProviderBase"
+        assert isinstance(provider, ProviderBase), (
+            f"Provider {name} does not inherit from ProviderBase"
+        )
 
 
 def test_load_providers_from_config_with_full_alphabet_json() -> None:
@@ -286,7 +300,14 @@ def test_load_providers_from_config_with_full_alphabet_json() -> None:
     providers = load_providers_from_config(config_data)
 
     assert len(providers) == 6
-    for name in ["china_alphabet", "japan_alphabet", "france_alphabet", "spain_alphabet", "arabic_alphabet", "swahili_alphabet"]:
+    for name in [
+        "china_alphabet",
+        "japan_alphabet",
+        "france_alphabet",
+        "spain_alphabet",
+        "arabic_alphabet",
+        "swahili_alphabet",
+    ]:
         assert name in providers
 
 
@@ -309,4 +330,3 @@ def test_providers_configuration_persistence() -> None:
     assert china_provider.config["CHINA_API_KEY"] == "persisted_key"
     assert china_provider.config["CHINA_API_SECRET"] == "persisted_secret"
     assert china_provider.is_config_ready()
-

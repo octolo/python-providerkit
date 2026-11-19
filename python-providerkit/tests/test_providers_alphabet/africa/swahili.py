@@ -31,7 +31,8 @@ class SwahiliAlphabetProvider(AlphabetProvider):
         Returns:
             List of Swahili alphabet characters (Latin without Q and X).
         """
-        base = [chr(i) for i in range(ord("A"), ord("Z") + 1) if chr(i) not in ["Q", "X"]]
+        base = [
+            chr(i) for i in range(ord("A"), ord("Z") + 1) if chr(i) not in ["Q", "X"]
+        ]
         lowercase = [c.lower() for c in base]
         return sorted(set(base + lowercase))
-

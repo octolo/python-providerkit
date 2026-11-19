@@ -14,5 +14,5 @@ def main(argv: list[str] | None = None) -> int:
     return int(result) if isinstance(result, (int, bool)) else (0 if result else 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
