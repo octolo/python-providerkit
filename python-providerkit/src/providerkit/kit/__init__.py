@@ -190,13 +190,12 @@ class ProviderBase(
         field: str,
         field_cfg: dict[str, Any],
     ) -> Any:
+        insert_method = getattr(self, f"get_insert_normalized_{field}", None)
+        if insert_method and callable(insert_method):
+            return insert_method(data, normalized, field_cfg)
         value = getattr(self, field, None)
-        if hasattr(self, f"get_insert_normalized_{field}") and callable(
-            getattr(self, f"get_insert_normalized_{field}")
-        ):
-            value = getattr(self, f"get_insert_normalized_{field}")(
-                data, normalized, field_cfg
-            )
+        if callable(value):
+            return None
         return value
 
     def insert_data_as_list(
