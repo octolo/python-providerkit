@@ -43,6 +43,10 @@ providerkit/
 
 ## Development
 
+CI also audits dependencies and runs Bandit separately for each package.
+Bandit findings in the Python package are reported without blocking pending
+review.
+
 Each package has its own `service.py` and development workflow:
 
 ```bash
@@ -55,3 +59,24 @@ Each package has its own `service.py` and development workflow:
 ## License
 
 MIT
+
+## Local audit
+
+Install the project's development/test dependencies (including both local
+packages where applicable), plus the audit tools:
+
+```bash
+python -m pip install ruff mypy bandit pip-audit vulture radon xenon pytest pytest-django pytest-cov build twine
+make audit
+```
+
+The Ruff profile requires version `0.17.5`: install it with
+`python -m pip install ruff==0.17.5`.
+
+Use the activated environment's Python, or pass `make audit PYTHON=/path/to/python`.
+On systems without Make, run `python scripts/audit.py` directly. Git is required;
+the geoaddress widget tests also require Node.js. The audit reports missing test
+suites and runs all available checks even when earlier checks fail.
+Xenon checks the absolute C, module B, and average A complexity thresholds. Existing
+lint, typing, security, dependency, or test findings can make the audit fail.
+CI also runs this audit as a non-blocking job and separately reports Radon maintainability without imposing a threshold.
